@@ -4,6 +4,7 @@ const cors = require('cors');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const multer = require('multer');
+const {processDrawing} = require('./imageProcessor');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,7 @@ function createSession() {
     createdAt: Date.now(),
     status: 'waiting',
     drawing: null,
+    processedDrawing: null,
     mood: null,
   };
 
@@ -137,10 +139,11 @@ app.get('/api/pairing/:code', (req, res) => {
     status: session.status,
     mood: session.mood,
     hasDrawing: Boolean(session.drawing),
+    hasCutout: Boolean(session.processedDrawing),
   });
 });
 
-// Upload a child's drawing from the phone
+// Upload a drawing and generate a transparent character PNG
 app.post(
   '/api/pairing/:code/drawing',
   (req, res, next) => {
@@ -156,10 +159,9 @@ app.post(
     next();
   },
   upload.single('drawing'),
-  (req, res) => {
+  async (req, res) => {
     const session = sessions.get(req.params.code);
 
-    // Check again in case the session expired during upload.
     if (!session || Date.now() - session.createdAt > SESSION_TTL) {
       sessions.delete(req.params.code);
 
@@ -174,21 +176,55 @@ app.post(
       });
     }
 
-    session.drawing = {
-      mimeType: req.file.mimetype,
-      data: req.file.buffer.toString('base64'),
-      uploadedAt: Date.now(),
-    };
+    try {
+      // Process with the local Python/OpenCV environment.
+      const processedBuffer = await processDrawing(req.file.buffer);
 
-    res.status(201).json({
-      ok: true,
-      message: 'Drawing received',
-      mimeType: session.drawing.mimeType,
-    });
+      // Recheck the session after asynchronous processing.
+      const currentSession = sessions.get(req.params.code);
+
+      if (
+        currentSession !== session ||
+        Date.now() - session.createdAt > SESSION_TTL
+      ) {
+        sessions.delete(req.params.code);
+
+        return res.status(410).json({
+          error: 'Pairing code expired',
+        });
+      }
+
+      // Preserve the original image for the existing TV flow.
+      session.drawing = {
+        mimeType: req.file.mimetype,
+        data: req.file.buffer.toString('base64'),
+        uploadedAt: Date.now(),
+      };
+
+      // Store the transparent PNG separately.
+      session.processedDrawing = {
+        mimeType: 'image/png',
+        data: processedBuffer.toString('base64'),
+        uploadedAt: Date.now(),
+      };
+
+      return res.status(201).json({
+        ok: true,
+        message: 'Drawing received and character extracted',
+        mimeType: session.drawing.mimeType,
+        hasCutout: true,
+      });
+    } catch (error) {
+      console.error('Character extraction failed:', error.message);
+
+      return res.status(500).json({
+        error: 'Could not process the drawing. Please try again.',
+      });
+    }
   },
 );
 
-// Retrieve the uploaded drawing for the TV
+// Retrieve the original drawing for the TV
 app.get('/api/pairing/:code/drawing', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -203,6 +239,24 @@ app.get('/api/pairing/:code/drawing', (req, res) => {
     mimeType: session.drawing.mimeType,
     data: session.drawing.data,
     uploadedAt: session.drawing.uploadedAt,
+  });
+});
+
+// Retrieve the transparent character cutout
+app.get('/api/pairing/:code/cutout', (req, res) => {
+  const session = getValidSession(req.params.code, res);
+  if (!session) return;
+
+  if (!session.processedDrawing) {
+    return res.status(404).json({
+      error: 'No processed character available yet',
+    });
+  }
+
+  res.json({
+    mimeType: session.processedDrawing.mimeType,
+    data: session.processedDrawing.data,
+    uploadedAt: session.processedDrawing.uploadedAt,
   });
 });
 

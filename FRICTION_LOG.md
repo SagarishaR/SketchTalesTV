@@ -6,6 +6,7 @@
 |---|---|---|---|
 | FL-001 | Audio playback | MP3 loaded but no sound played in the Vega simulator | Resolved with a manifest change; exact root cause unconfirmed |
 | FL-002 | Drawing upload and display | Uploaded drawing needed additional API integration to appear on the TV | Resolved and tested |
+| FL-003 | OpenCV character extraction | Background removal and large photo cutouts needed debugging and resizing | Prototype works; generalization pending |
 
 ---
 
@@ -74,3 +75,45 @@ While integrating the display logic, I also encountered a JSX parenthesis mismat
 ## Notes
 
 This log records issues encountered during development, the steps taken to resolve them, and the limitations that remain. The observations are based on testing performed during the SketchTales TV implementation.
+---
+
+## FL-003: OpenCV character extraction and oversized cutout
+
+**Task attempted:** Remove the paper background from an uploaded drawing and prepare a transparent character PNG for story-scene composition.
+
+**What happened:**
+
+I installed OpenCV and NumPy in a dedicated Python virtual environment under `backend/.venv`. I first tested extraction using a 680 × 680 cartoon elephant image. The initial diagnostic reported 0% transparency, so I investigated the flood-fill mask and corrected the extraction script.
+
+The corrected approach identified white regions connected to the image border as background while preserving enclosed white regions inside the elephant. A preview on a contrasting purple background showed that the elephant's main shape and white interior were preserved. The source watermark remained in the image.
+
+I then created a reusable Python extraction script and a Node.js helper that invokes it through a subprocess. The Node-to-Python bridge successfully generated a transparent PNG.
+
+During end-to-end testing, a photograph uploaded from the phone measured 3072 × 4080 pixels. The resulting cutout was approximately 16 MB, and its Base64 API response was about 20.6 million characters. This was too large for an efficient TV story pipeline.
+
+**How I resolved it:**
+
+1. Created an isolated Python virtual environment and installed OpenCV and NumPy.
+2. Developed and tested a flood-fill-based background-removal script.
+3. Added a Node.js-to-Python processing bridge.
+4. Integrated processing into the drawing-upload endpoint and added a separate cutout retrieval endpoint.
+5. Limited the longest output dimension to 1024 pixels and enabled PNG compression.
+6. Re-uploaded a drawing and verified that the processed output measured 771 × 1024 pixels and was approximately 653 KB.
+
+**Expected result:** Uploaded drawings should produce transparent PNG assets that can later be composited onto story backgrounds without displaying the cutout as a separate screen on the TV.
+
+**Actual result:** The processing pipeline and cutout endpoint work, and resizing reduced the tested output from approximately 16 MB to 653 KB. The existing phone-to-TV flow continued to display the original photograph.
+
+**Severity:** High — character extraction is a key part of preserving the child's artwork in generated story scenes.
+
+**Remaining limitations:**
+
+- The extraction approach works best with near-white backgrounds and sufficiently enclosed outlines.
+- The tested source image still contains a watermark.
+- Photographs with shadows, colored paper, gaps in outlines, or surrounding screen/laptop backgrounds may produce inaccurate cutouts.
+- The output has not yet been validated against a diverse set of real drawings.
+- The current backend stores images in memory as Base64 data, so they are lost when the backend restarts.
+- The TV has not yet consumed the cutout for scene composition.
+
+**Next action:** Validate extraction on varied drawings, improve image validation and background removal, and use the cutout as an internal asset in the story-scene composition pipeline.
+
