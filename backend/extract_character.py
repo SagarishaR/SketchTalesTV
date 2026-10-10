@@ -4,8 +4,9 @@ import numpy as np
 
 MAX_DIMENSION = 1024
 
+
 def extract_character(input_path, output_path):
-    image = cv2.imread(input_path)
+    image = cv2.imread(input_path, cv2.IMREAD_COLOR)
 
     if image is None:
         raise ValueError("Could not read the input image")
@@ -23,19 +24,31 @@ def extract_character(input_path, output_path):
 
     height, width = image.shape[:2]
 
-    # Detect near-white paper connected to the image border.
-    white = cv2.inRange(image, (235, 235, 235), (255, 255, 255))
+    # Detect near-white paper.
+    white = cv2.inRange(image, (225, 225, 225), (255, 255, 255))
+
+    # Flood-fill only near-white pixels connected to the image border.
+    # Do not dilate this mask: that can erase white parts of the drawing.
     flood = white.copy()
     flood_mask = np.zeros((height + 2, width + 2), np.uint8)
-    cv2.floodFill(flood, flood_mask, (0, 0), 128)
+
+    for x, y in [
+        (0, 0),
+        (width - 1, 0),
+        (0, height - 1),
+        (width - 1, height - 1),
+        (width // 2, 0),
+        (width // 2, height - 1),
+        (0, height // 2),
+        (width - 1, height // 2),
+    ]:
+        if flood[y, x] == 255:
+            cv2.floodFill(flood, flood_mask, (x, y), 128)
 
     background = flood == 128
-    background_mask = background.astype(np.uint8) * 255
-    background_mask = cv2.dilate(
-        background_mask, np.ones((3, 3), np.uint8), iterations=1
-    )
 
-    alpha = np.where(background_mask > 0, 0, 255).astype(np.uint8)
+    # Preserve a narrow antialiased transition at the character boundary.
+    alpha = np.where(background, 0, 255).astype(np.uint8)
 
     rgba = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
     rgba[:, :, 3] = alpha
@@ -50,6 +63,7 @@ def extract_character(input_path, output_path):
     print(f"Output dimensions: {width}x{height}")
     print(f"Transparent pixels: {100 * np.mean(alpha == 0):.1f}%")
     print(f"Saved: {output_path}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

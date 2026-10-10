@@ -281,6 +281,191 @@ app.post('/api/pairing/:code/mood', (req, res) => {
   });
 });
 
+
+// Generate a deterministic five-scene story without external AI APIs.
+app.post('/api/pairing/:code/story', (req, res) => {
+  const session = getValidSession(req.params.code, res);
+  if (!session) return;
+
+  if (!session.drawing || !session.processedDrawing) {
+    return res.status(409).json({
+      error: 'Upload a drawing before creating a story',
+    });
+  }
+
+  const genre = req.body?.genre;
+  const allowedGenres = ['magical', 'funny', 'space', 'animals'];
+
+  if (!allowedGenres.includes(genre)) {
+    return res.status(400).json({
+      error: 'Choose magical, funny, space, or animals',
+    });
+  }
+
+  const hero = 'your little hero';
+
+  const stories = {
+    magical: {
+      title: 'The Doorway of Dreams',
+      scenes: [
+        {
+          number: 1,
+          title: 'A Spark in the Garden',
+          narration: `One quiet evening, ${hero} discovered a tiny golden light hiding beneath a leaf.`,
+          visualPrompt: 'A moonlit garden with glowing flowers and floating golden sparkles.',
+        },
+        {
+          number: 2,
+          title: 'The Secret Path',
+          narration: 'The light drifted away, revealing a secret path that had never been there before.',
+          visualPrompt: 'A winding enchanted path between oversized flowers and luminous trees.',
+        },
+        {
+          number: 3,
+          title: 'The Lost Star',
+          narration: 'At the end of the path, a little star was waiting. It had fallen from the night sky and could not find its way home.',
+          visualPrompt: 'A tiny friendly star resting beside a sparkling stream under a deep blue sky.',
+        },
+        {
+          number: 4,
+          title: 'A Little Bit of Magic',
+          narration: `${hero} helped the star climb onto a floating moonbeam. The whole garden began to shimmer.`,
+          visualPrompt: 'A glowing moonbeam rising above a magical garden filled with soft golden light.',
+        },
+        {
+          number: 5,
+          title: 'The Sky Shines Again',
+          narration: 'The star returned to its place in the sky. From that night on, one special star twinkled whenever the little hero looked up.',
+          visualPrompt: 'A peaceful starry sky above the garden, with a warm magical glow surrounding the hero.',
+        },
+      ],
+    },
+
+    funny: {
+      title: 'The Great Giggle Mix-Up',
+      scenes: [
+        {
+          number: 1,
+          title: 'A Very Strange Morning',
+          narration: `${hero} woke up to discover that everything in the garden was making silly noises.`,
+          visualPrompt: 'A cheerful garden where flowers, bushes, and garden tools look comically surprised.',
+        },
+        {
+          number: 2,
+          title: 'The Sneezing Fountain',
+          narration: 'The fountain sneezed so hard that it sprayed water in the shape of a giant moustache.',
+          visualPrompt: 'A whimsical fountain spraying water into a funny moustache shape.',
+        },
+        {
+          number: 3,
+          title: 'The Wiggly Mystery',
+          narration: 'A trail of wiggly footprints led to a bush that would not stop giggling.',
+          visualPrompt: 'A round leafy bush shaking with laughter, with silly footprints on the path.',
+        },
+        {
+          number: 4,
+          title: 'The Surprise Inside',
+          narration: `${hero} peeked behind the bush and found a tiny creature tickling the roots with a feather.`,
+          visualPrompt: 'A tiny friendly creature holding a feather behind a playful garden bush.',
+        },
+        {
+          number: 5,
+          title: 'Everybody Laughs',
+          narration: 'Soon the entire garden was laughing together. Even the fountain made one last tiny hiccup.',
+          visualPrompt: 'A joyful garden celebration with friendly creatures and little water splashes.',
+        },
+      ],
+    },
+
+    space: {
+      title: 'The Little Star Explorer',
+      scenes: [
+        {
+          number: 1,
+          title: 'A Rocket of Their Own',
+          narration: `${hero} discovered a little rocket parked beside a hill, with a button glowing on its dashboard.`,
+          visualPrompt: 'A friendly small rocket parked on a grassy hill beneath a star-filled sky.',
+        },
+        {
+          number: 2,
+          title: 'Up Among the Stars',
+          narration: 'Whoosh! The rocket carried the little hero past the clouds and into the sparkling universe.',
+          visualPrompt: 'A colorful rocket flying past fluffy clouds into a vibrant starry universe.',
+        },
+        {
+          number: 3,
+          title: 'The Planet of Rings',
+          narration: 'A tiny planet with beautiful rings appeared ahead. Someone there was waving for help.',
+          visualPrompt: 'A whimsical pastel planet with rings, floating rocks, and a tiny welcoming alien.',
+        },
+        {
+          number: 4,
+          title: 'A Cosmic Delivery',
+          narration: `${hero} helped a friendly space creature return a missing moon crystal to its home.`,
+          visualPrompt: 'A friendly alien receiving a glowing crystal beside a little space station.',
+        },
+        {
+          number: 5,
+          title: 'Home Before Bedtime',
+          narration: 'With a pocket full of stardust and a head full of memories, the little explorer flew home beneath the moon.',
+          visualPrompt: 'A little rocket returning toward Earth, with a bright moon and twinkling stars.',
+        },
+      ],
+    },
+
+    animals: {
+      title: 'The Forest Friendship',
+      scenes: [
+        {
+          number: 1,
+          title: 'A Rustle in the Leaves',
+          narration: `${hero} wandered into a peaceful forest and heard a tiny squeak from beneath a fern.`,
+          visualPrompt: 'A sunny woodland with giant ferns, mushrooms, and a mysterious rustling bush.',
+        },
+        {
+          number: 2,
+          title: 'A New Friend',
+          narration: 'A little rabbit popped out. It had been looking everywhere for its family.',
+          visualPrompt: 'A small friendly rabbit peeking from a fern in a warm, colorful woodland.',
+        },
+        {
+          number: 3,
+          title: 'Following the Clues',
+          narration: 'Together, they followed soft pawprints past a babbling brook and a sleepy turtle.',
+          visualPrompt: 'A woodland trail crossing a gentle stream, with a sleepy turtle and tiny pawprints.',
+        },
+        {
+          number: 4,
+          title: 'The Family Clearing',
+          narration: `${hero} and the rabbit reached a sunny clearing where a family of rabbits was waiting.`,
+          visualPrompt: 'A sunny forest clearing where several friendly rabbits gather near flowers.',
+        },
+        {
+          number: 5,
+          title: 'Friends Forever',
+          narration: 'The little rabbit was home again. Before leaving, it gave the hero a flower as a reminder of their new friendship.',
+          visualPrompt: 'A warm forest farewell with friendly animals, colorful flowers, and golden sunlight.',
+        },
+      ],
+    },
+  };
+
+  const story = {
+    id: `${session.code}-${Date.now()}`,
+    genre,
+    title: stories[genre].title,
+    heroImageAvailable: Boolean(session.processedDrawing),
+    scenes: stories[genre].scenes,
+    generatedAt: Date.now(),
+    mode: 'mock',
+  };
+
+  session.genre = genre;
+  session.story = story;
+
+  return res.status(201).json(story);
+});
+
 // Return upload and request errors as JSON
 app.use((error, _req, res, _next) => {
   console.error('Request error:', error.message);
