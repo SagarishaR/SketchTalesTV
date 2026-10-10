@@ -1,6 +1,7 @@
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
+  Animated,
   Image,
   Pressable,
   ScrollView,
@@ -76,6 +77,50 @@ export const App = () => {
     'Connecting to pairing service...',
   );
   const [drawingUri, setDrawingUri] = useState<string | null>(null);
+  const [characterUri, setCharacterUri] = useState<string | null>(null);
+  const characterBounce = useRef(new Animated.Value(0)).current;
+  const characterWalk = useRef(new Animated.Value(0)).current;
+  const characterAction = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+  const bounceAnimation = Animated.loop(
+    Animated.sequence([
+      Animated.timing(characterBounce, {
+        toValue: -10,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(characterBounce, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+    ]),
+  );
+
+  const walkAnimation = Animated.loop(
+    Animated.sequence([
+      Animated.timing(characterWalk, {
+        toValue: 1,
+        duration: 2800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(characterWalk, {
+        toValue: 0,
+        duration: 2800,
+        useNativeDriver: true,
+      }),
+    ]),
+  );
+
+  bounceAnimation.start();
+  walkAnimation.start();
+
+  return () => {
+    bounceAnimation.stop();
+    walkAnimation.stop();
+  };
+}, [characterBounce, characterWalk]);
+
   const [screen, setScreen] = useState<'pairing' | 'genres' | 'story'>(
     'pairing',
   );
@@ -172,6 +217,19 @@ export const App = () => {
             setDrawingUri(
               `data:${drawingData.mimeType};base64,${drawingData.data}`,
             );
+	    const cutoutResponse = await fetch(
+  `${API_BASE}/api/pairing/${data.code}/cutout`,
+);
+
+if (cutoutResponse.ok) {
+  const cutoutData: DrawingResponse = await cutoutResponse.json();
+
+  if (active) {
+    setCharacterUri(
+      `data:${cutoutData.mimeType};base64,${cutoutData.data}`,
+    );
+  }
+}
 
             drawingLoaded = true;
             setScreen('genres');
@@ -239,6 +297,47 @@ export const App = () => {
       setStoryLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (screen !== 'story' || !story) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setSceneIndex(index =>
+        index >= story.scenes.length - 1 ? 0 : index + 1,
+      );
+    }, 20000);
+
+    return () => clearInterval(timer);
+  }, [screen, story]);
+
+  useEffect(() => {
+    if (screen !== 'story') {
+      return;
+    }
+
+    characterAction.setValue(0);
+
+    const action = Animated.loop(
+      Animated.sequence([
+        Animated.timing(characterAction, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(characterAction, {
+          toValue: 0,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    action.start();
+
+    return () => action.stop();
+  }, [screen, sceneIndex, characterAction]);
 
   const currentScene = story?.scenes[sceneIndex];
   const isFirstScene = sceneIndex === 0;
@@ -413,22 +512,73 @@ export const App = () => {
 
           <View style={styles.storyBody}>
             <View style={styles.storyArt}>
-              {drawingUri ? (
-                <Image
-                  source={{uri: drawingUri}}
-                  style={styles.storyHeroImage}
-                  resizeMode="contain"
-                />
-              ) : null}
-              <View style={styles.artPlaceholder}>
-                <Text style={styles.artPlaceholderEmoji}>✦</Text>
-                <Text style={styles.artPlaceholderTitle}>
-                  Storybook scene
-                </Text>
-                <Text style={styles.artPlaceholderText}>
-                  {currentScene.visualPrompt}
-                </Text>
-              </View>
+              <Image
+                source={
+                  [
+                    require('../backend/public/scenes/forest-background.png'),
+                    require('../backend/public/scenes/scene-2-river.png'),
+                    require('../backend/public/scenes/scene-3-cave.png'),
+                    require('../backend/public/scenes/scene-4-castle.png'),
+                    require('../backend/public/scenes/scene-5-celebration.png'),
+                  ][Math.min(sceneIndex, 4)]
+                }
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
+              />
+
+              <Animated.Image
+                source={characterUri ? {uri: characterUri} : require('../backend/public/scenes/animated-elephant.png')}
+                resizeMode="contain"
+                style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  width: '36%',
+                  height: '72%',
+                  transform: [
+                    {
+                      translateX:
+                        sceneIndex === 0
+                          ? characterWalk.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-100, 100],
+                            })
+                          : 0,
+                    },
+                    {
+                      translateY:
+                        sceneIndex === 1
+                          ? characterAction.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0, -65],
+                            })
+                          : sceneIndex === 3
+                          ? characterAction.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0, -45],
+                            })
+                          : characterBounce,
+                    },
+                    {
+                      scale:
+                        sceneIndex === 2 || sceneIndex === 4
+                          ? characterAction.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [1, 1.15],
+                            })
+                          : 1,
+                    },
+                    {
+                      rotate:
+                        sceneIndex === 4
+                          ? characterAction.interpolate({
+                              inputRange: [0, 0.5, 1],
+                              outputRange: ['0deg', '-12deg', '0deg'],
+                            })
+                          : '0deg',
+                    },
+                  ],
+                }}
+              />
             </View>
 
             <View style={styles.narrationPanel}>
@@ -846,18 +996,13 @@ const styles = StyleSheet.create({
   },
   storyArt: {
     flex: 1.1,
+    position: 'relative',
     borderRadius: 18,
     backgroundColor: '#211B39',
     borderWidth: 1,
     borderColor: '#3E335B',
     overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-  },
-  storyHeroImage: {
-    width: '78%',
-    height: '78%',
+    padding: 0,
   },
   artPlaceholder: {
     width: '100%',
