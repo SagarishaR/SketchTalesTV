@@ -1,16 +1,114 @@
+import {AudioPlayer} from '@amazon-devices/react-native-w3cmedia';
 
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Animated,
+  Easing,
   Image,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
-const API_BASE = 'http://192.168.29.48:3000';
+// ---------------------------------------------------------------------------
+// Configuration
+// ---------------------------------------------------------------------------
+
+// Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
+// Change this one line if the address printed there is different.
+const API_BASE =  'https://took-appraisal-invention-wichita.trycloudflare.com';
+
+// To test the player on its own, paste any https .mp3 link here
+// (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
+// Leave it as '' for normal use.
+const AUDIO_TEST_URL = '';
+
+// Genres shown on the selection screen. Add 'funny' and 'animals' back
+// once you have matching artwork for them.
+const ENABLED_GENRES = ['magical', 'space'];
+
+// Seconds-based fallbacks, in milliseconds.
+const FALLBACK_SCENE_MS = 12000; // used when a scene has no audio or audio fails
+const MAX_SCENE_MS = 60000; // safety net so a stuck audio file never freezes the story
+
+// Keep content away from the screen edges (TV safe area).
+const SAFE = 40;
+
+// ---------------------------------------------------------------------------
+// Artwork
+// ---------------------------------------------------------------------------
+
+// Metro needs static require() paths, so every image is listed explicitly.
+const BG = {
+  forest: require('../backend/public/scenes/forest-background.png'),
+  river: require('../backend/public/scenes/scene-2-river.png'),
+  cave: require('../backend/public/scenes/scene-3-cave.png'),
+  castle: require('../backend/public/scenes/scene-4-castle.png'),
+  celebration: require('../backend/public/scenes/scene-5-celebration.png'),
+};
+
+const DEFAULT_ART = [BG.forest, BG.river, BG.cave, BG.castle, BG.celebration];
+
+// One list of five backgrounds per genre. Until your new illustrations exist,
+// every genre uses the default set. When they do, replace a line like this:
+//
+//   magical: [
+//     require('../backend/public/scenes/magical/1.png'),
+//     require('../backend/public/scenes/magical/2.png'),
+//     require('../backend/public/scenes/magical/3.png'),
+//     require('../backend/public/scenes/magical/4.png'),
+//     require('../backend/public/scenes/magical/5.png'),
+//   ],
+const SCENE_ART: Record<string, any[]> = {
+  magical: DEFAULT_ART,
+  space: DEFAULT_ART,
+  funny: DEFAULT_ART,
+  animals: DEFAULT_ART,
+};
+
+// Optional strip of grass/rocks drawn IN FRONT of the hero so the character
+// looks like it stands inside the scene. Use a transparent PNG, then enable it:
+//   const FOREGROUND: any = require('../backend/public/scenes/foreground.png');
+const FOREGROUND: any = null;
+
+// Fallback hero if no cutout has been uploaded.
+const FALLBACK_HERO = require('../backend/public/scenes/animated-elephant.png');
+
+// ---------------------------------------------------------------------------
+// Per-scene staging
+// ---------------------------------------------------------------------------
+
+type Motion = 'walk' | 'hop' | 'pop' | 'celebrate';
+
+// x = horizontal centre of the hero (0..1 of stage width)
+// y = where the hero's feet stand (0..1 of stage height)
+// h = hero height as a fraction of stage height
+const SCENE_PLAN: {x: number; y: number; h: number; motion: Motion}[] = [
+  {x: 0.3, y: 0.74, h: 0.48, motion: 'walk'},
+  {x: 0.32, y: 0.74, h: 0.48, motion: 'hop'},
+  {x: 0.3, y: 0.74, h: 0.48, motion: 'pop'},
+  {x: 0.34, y: 0.74, h: 0.48, motion: 'hop'},
+  {x: 0.5, y: 0.74, h: 0.48, motion: 'celebrate'},
+];
+
+// Twinkling sparkles scattered over each scene (fractions of the stage).
+const SPARKS = [
+  {x: 0.08, y: 0.14, size: 22, delay: 0},
+  {x: 0.22, y: 0.3, size: 16, delay: 700},
+  {x: 0.38, y: 0.1, size: 20, delay: 1400},
+  {x: 0.52, y: 0.26, size: 14, delay: 300},
+  {x: 0.66, y: 0.12, size: 24, delay: 1100},
+  {x: 0.78, y: 0.34, size: 16, delay: 1800},
+  {x: 0.9, y: 0.16, size: 20, delay: 500},
+  {x: 0.7, y: 0.5, size: 14, delay: 2100},
+  {x: 0.15, y: 0.55, size: 14, delay: 900},
+  {x: 0.46, y: 0.46, size: 12, delay: 1600},
+];
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 type PairingSession = {
   code: string;
@@ -30,6 +128,7 @@ type StoryScene = {
   title: string;
   narration: string;
   visualPrompt: string;
+  audioUrl?: string | null;
 };
 
 type Story = {
@@ -40,7 +139,9 @@ type Story = {
   mode: string;
 };
 
-const genres = [
+type Screen = 'pairing' | 'genres' | 'story' | 'ending';
+
+const ALL_GENRES = [
   {
     id: 'magical',
     emoji: '✨',
@@ -71,65 +172,125 @@ const genres = [
   },
 ];
 
+const genres = ALL_GENRES.filter(g => ENABLED_GENRES.includes(g.id));
+
+// ---------------------------------------------------------------------------
+// Small reusable pieces
+// ---------------------------------------------------------------------------
+
+// A value that eases 0 -> 1 -> 0 forever. Used for bobbing, hopping, walking.
+const useLoop = (halfMs: number) => {
+  const value = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(value, {
+          toValue: 1,
+          duration: halfMs,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(value, {
+          toValue: 0,
+          duration: halfMs,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [value, halfMs]);
+
+  return value;
+};
+
+type SparkleProps = {x: number; y: number; size: number; delay: number};
+
+const Sparkle = ({x, y, size, delay}: SparkleProps) => {
+  const glow = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(glow, {
+          toValue: 1,
+          duration: 2200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glow, {
+          toValue: 0,
+          duration: 2200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [glow, delay]);
+
+  return (
+    <Animated.Text
+      style={{
+        position: 'absolute',
+        left: `${x * 100}%` as any,
+        top: `${y * 100}%` as any,
+        fontSize: size,
+        color: '#FFF3B8',
+        opacity: glow.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.15, 0.95],
+        }),
+        transform: [
+          {
+            translateY: glow.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -12],
+            }),
+          },
+          {
+            scale: glow.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.8, 1.15],
+            }),
+          },
+        ],
+      }}>
+      ✦
+    </Animated.Text>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// App
+// ---------------------------------------------------------------------------
+
 export const App = () => {
   const [session, setSession] = useState<PairingSession | null>(null);
-  const [status, setStatus] = useState(
-    'Connecting to pairing service...',
-  );
+  const [status, setStatus] = useState('Connecting to pairing service...');
   const [drawingUri, setDrawingUri] = useState<string | null>(null);
   const [characterUri, setCharacterUri] = useState<string | null>(null);
-  const characterBounce = useRef(new Animated.Value(0)).current;
-  const characterWalk = useRef(new Animated.Value(0)).current;
-  const characterAction = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-  const bounceAnimation = Animated.loop(
-    Animated.sequence([
-      Animated.timing(characterBounce, {
-        toValue: -10,
-        duration: 350,
-        useNativeDriver: true,
-      }),
-      Animated.timing(characterBounce, {
-        toValue: 0,
-        duration: 350,
-        useNativeDriver: true,
-      }),
-    ]),
-  );
-
-  const walkAnimation = Animated.loop(
-    Animated.sequence([
-      Animated.timing(characterWalk, {
-        toValue: 1,
-        duration: 2800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(characterWalk, {
-        toValue: 0,
-        duration: 2800,
-        useNativeDriver: true,
-      }),
-    ]),
-  );
-
-  bounceAnimation.start();
-  walkAnimation.start();
-
-  return () => {
-    bounceAnimation.stop();
-    walkAnimation.stop();
-  };
-}, [characterBounce, characterWalk]);
-
-  const [screen, setScreen] = useState<'pairing' | 'genres' | 'story'>(
-    'pairing',
-  );
+  const [screen, setScreen] = useState<Screen>('pairing');
   const [selectedGenre, setSelectedGenre] = useState('magical');
   const [story, setStory] = useState<Story | null>(null);
   const [sceneIndex, setSceneIndex] = useState(0);
   const [storyLoading, setStoryLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [stage, setStage] = useState({w: 1200, h: 650});
+  const [audioDebug, setAudioDebug] = useState('audio: waiting');
 
+  // Animation drivers (all native-driven).
+  const bob = useLoop(380); // quick little bounce
+  const beat = useLoop(650); // hop / pop rhythm
+  const slow = useLoop(3200); // slow walk across the scene
+  const drift = useRef(new Animated.Value(0)).current; // background camera drift
+  const fade = useRef(new Animated.Value(1)).current; // scene-change fade overlay
+
+  // ---- Pairing and drawing polling (unchanged behaviour) -------------------
   useEffect(() => {
     let active = true;
     let drawingLoaded = false;
@@ -141,9 +302,7 @@ export const App = () => {
         const response = await fetch(`${API_BASE}/api/pairing`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            phoneUrl: `${API_BASE}/phone.html`,
-          }),
+          body: JSON.stringify({phoneUrl: `${API_BASE}/phone.html`}),
         });
 
         if (!response.ok) {
@@ -207,8 +366,7 @@ export const App = () => {
               throw new Error('Could not retrieve the drawing');
             }
 
-            const drawingData: DrawingResponse =
-              await drawingResponse.json();
+            const drawingData: DrawingResponse = await drawingResponse.json();
 
             if (!active) {
               return;
@@ -217,19 +375,20 @@ export const App = () => {
             setDrawingUri(
               `data:${drawingData.mimeType};base64,${drawingData.data}`,
             );
-	    const cutoutResponse = await fetch(
-  `${API_BASE}/api/pairing/${data.code}/cutout`,
-);
 
-if (cutoutResponse.ok) {
-  const cutoutData: DrawingResponse = await cutoutResponse.json();
+            const cutoutResponse = await fetch(
+              `${API_BASE}/api/pairing/${data.code}/cutout`,
+            );
 
-  if (active) {
-    setCharacterUri(
-      `data:${cutoutData.mimeType};base64,${cutoutData.data}`,
-    );
-  }
-}
+            if (cutoutResponse.ok) {
+              const cutoutData: DrawingResponse = await cutoutResponse.json();
+
+              if (active) {
+                setCharacterUri(
+                  `data:${cutoutData.mimeType};base64,${cutoutData.data}`,
+                );
+              }
+            }
 
             drawingLoaded = true;
             setScreen('genres');
@@ -259,6 +418,7 @@ if (cutoutResponse.ok) {
     };
   }, []);
 
+  // ---- Story creation ------------------------------------------------------
   const createStory = async (genre: string) => {
     if (!session || storyLoading) {
       return;
@@ -291,59 +451,28 @@ if (cutoutResponse.ok) {
       setStatus('Your adventure is ready!');
     } catch (error) {
       setErrorMessage(
-        `${String(error)}. Check that the backend is running.`,
+        `${String(error)}. Check that the backend and tunnel are running.`,
       );
     } finally {
       setStoryLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (screen !== 'story' || !story) {
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setSceneIndex(index =>
-        index >= story.scenes.length - 1 ? 0 : index + 1,
-      );
-    }, 20000);
-
-    return () => clearInterval(timer);
-  }, [screen, story]);
-
-  useEffect(() => {
-    if (screen !== 'story') {
-      return;
-    }
-
-    characterAction.setValue(0);
-
-    const action = Animated.loop(
-      Animated.sequence([
-        Animated.timing(characterAction, {
-          toValue: 1,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-        Animated.timing(characterAction, {
-          toValue: 0,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-
-    action.start();
-
-    return () => action.stop();
-  }, [screen, sceneIndex, characterAction]);
-
   const currentScene = story?.scenes[sceneIndex];
   const isFirstScene = sceneIndex === 0;
-  const isLastScene = story
-    ? sceneIndex === story.scenes.length - 1
-    : false;
+
+  const goNext = () => {
+    if (!story) {
+      return;
+    }
+    if (sceneIndex >= story.scenes.length - 1) {
+      setScreen('ending');
+    } else {
+      setSceneIndex(index => index + 1);
+    }
+  };
+
+  const goPrev = () => setSceneIndex(index => Math.max(0, index - 1));
 
   const returnToGenres = () => {
     setStory(null);
@@ -352,6 +481,394 @@ if (cutoutResponse.ok) {
     setScreen('genres');
   };
 
+  // ---- Scene change: restart camera drift and fade in ----------------------
+  useEffect(() => {
+    if (screen !== 'story') {
+      return;
+    }
+
+    drift.setValue(0);
+    fade.setValue(1);
+
+    const intro = Animated.parallel([
+      Animated.timing(drift, {
+        toValue: 1,
+        duration: 24000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fade, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]);
+
+    intro.start();
+    return () => intro.stop();
+  }, [screen, sceneIndex, story?.id, drift, fade]);
+
+  // ---- Narration: one player per scene; the audio drives the story ---------
+  useEffect(() => {
+    if (screen !== 'story' || !story || !currentScene) {
+      return;
+    }
+
+    let active = true;
+    let finished = false;
+    let player: any = null;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    const finish = () => {
+      if (!active || finished) {
+        return;
+      }
+      finished = true;
+      goNext();
+    };
+
+    const startFallbackTimer = () => {
+      timers.push(setTimeout(finish, FALLBACK_SCENE_MS));
+    };
+
+    const onEnded = () => {
+      setAudioDebug('audio: ended');
+      finish();
+    };
+    const onError = () => {
+      console.warn('Narration error code:', player?.error?.code);
+      setAudioDebug(`audio: ERROR code ${player?.error?.code}`);
+      startFallbackTimer();
+    };
+
+    const url = currentScene.audioUrl;
+
+    if (!url && !AUDIO_TEST_URL) {
+      setAudioDebug('audio: NO audioUrl from server');
+      startFallbackTimer();
+    } else {
+      setAudioDebug(`audio: loading ${AUDIO_TEST_URL || url}`);
+      (async () => {
+        try {
+          player = new AudioPlayer();
+          player.addEventListener('ended', onEnded);
+          player.addEventListener('error', onError);
+          await player.initialize();
+
+          if (!active) {
+            return;
+          }
+
+          player.src = AUDIO_TEST_URL || `${API_BASE}${url}`;
+          player.autoplay = true;
+          await player.play();
+          setAudioDebug(`audio: playing ${AUDIO_TEST_URL || url}`);
+
+          // Safety net in case neither 'ended' nor 'error' ever fires.
+          timers.push(setTimeout(finish, MAX_SCENE_MS));
+        } catch (error) {
+          console.warn('Narration playback failed:', error);
+          setAudioDebug(`audio: FAILED ${String(error)}`);
+          if (active) {
+            startFallbackTimer();
+          }
+        }
+      })();
+    }
+
+    return () => {
+      active = false;
+      timers.forEach(clearTimeout);
+
+      if (player) {
+        try {
+          player.removeEventListener('ended', onEnded);
+          player.removeEventListener('error', onError);
+        } catch {
+          // ignore
+        }
+        void Promise.resolve(player.deinitialize?.()).catch(() => {});
+      }
+    };
+    // goNext is intentionally omitted: it is recreated every render and this
+    // effect already re-runs whenever the scene changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, story?.id, sceneIndex]);
+
+  // ---- Hero staging for the current scene ----------------------------------
+  const plan = SCENE_PLAN[Math.min(sceneIndex, SCENE_PLAN.length - 1)];
+  const heroH = stage.h * plan.h;
+  const heroW = heroH;
+  const heroLeft = plan.x * stage.w - heroW / 2;
+  const heroTop = plan.y * stage.h - heroH;
+
+  const heroTransform = (): any[] => {
+    switch (plan.motion) {
+      case 'walk':
+        return [
+          {
+            translateX: slow.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-stage.w * 0.12, stage.w * 0.12],
+            }),
+          },
+          {
+            translateY: bob.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -8],
+            }),
+          },
+          {
+            rotate: bob.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['-3deg', '3deg'],
+            }),
+          },
+        ];
+      case 'hop':
+        return [
+          {
+            translateY: beat.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -stage.h * 0.14],
+            }),
+          },
+          {
+            scaleY: beat.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.94, 1.06],
+            }),
+          },
+          {
+            scaleX: beat.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1.05, 0.96],
+            }),
+          },
+        ];
+      case 'pop':
+        return [
+          {
+            translateY: bob.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -6],
+            }),
+          },
+          {
+            scale: beat.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 1.14],
+            }),
+          },
+        ];
+      default:
+        return [
+          {
+            translateY: beat.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -stage.h * 0.06],
+            }),
+          },
+          {
+            rotate: beat.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['-8deg', '8deg'],
+            }),
+          },
+          {scale: 1.05},
+        ];
+    }
+  };
+
+  const heroSource = characterUri ? {uri: characterUri} : FALLBACK_HERO;
+  const artList = SCENE_ART[story?.genre ?? selectedGenre] ?? DEFAULT_ART;
+  const artSource = artList[Math.min(sceneIndex, artList.length - 1)];
+
+  // =========================================================================
+  // STORY SCREEN: full-screen stage
+  // =========================================================================
+  if (screen === 'story' && story && currentScene) {
+    return (
+      <View style={styles.storyRoot}>
+        <View
+          style={styles.stage}
+          onLayout={e =>
+            setStage({
+              w: e.nativeEvent.layout.width,
+              h: e.nativeEvent.layout.height,
+            })
+          }>
+          {/* Background with a slow camera drift */}
+          <Animated.Image
+            source={artSource}
+            resizeMode="cover"
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                transform: [
+                  {
+                    scale: drift.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1.0, 1.1],
+                    }),
+                  },
+                  {
+                    translateX: drift.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -stage.w * 0.03],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+
+          {/* Twinkling sparkles */}
+          {SPARKS.map((spark, i) => (
+            <Sparkle key={i} {...spark} />
+          ))}
+
+          {/* Soft shadow under the hero */}
+          <Animated.View
+            style={[
+              styles.shadow,
+              {
+                width: heroW * 0.55,
+                left: plan.x * stage.w - (heroW * 0.55) / 2,
+                top: plan.y * stage.h - 10,
+                opacity:
+                  plan.motion === 'hop' || plan.motion === 'celebrate'
+                    ? beat.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.35, 0.15],
+                      })
+                    : 0.3,
+                transform:
+                  plan.motion === 'walk'
+                    ? [
+                        {
+                          translateX: slow.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [-stage.w * 0.12, stage.w * 0.12],
+                          }),
+                        },
+                      ]
+                    : [
+                        {
+                          scaleX:
+                            plan.motion === 'hop'
+                              ? beat.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [1, 0.7],
+                                })
+                              : 1,
+                        },
+                      ],
+              },
+            ]}
+          />
+
+          {/* The child's drawing, as the hero */}
+          <Animated.Image
+            source={heroSource}
+            resizeMode="contain"
+            style={{
+              position: 'absolute',
+              width: heroW,
+              height: heroH,
+              left: heroLeft,
+              top: heroTop,
+              transform: heroTransform(),
+            }}
+          />
+
+          {/* Foreground strip in front of the hero (optional) */}
+          {FOREGROUND ? (
+            <Image
+              source={FOREGROUND}
+              resizeMode="stretch"
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100%',
+                height: stage.h * 0.2,
+              }}
+            />
+          ) : null}
+
+          {/* Top bar: title, progress dots, small controls */}
+          <View style={styles.topBar}>
+            <View style={styles.titlePill}>
+              <Text style={styles.titlePillText}>{story.title}</Text>
+            </View>
+
+            <View style={styles.topRight}>
+              <View style={styles.dots}>
+                {story.scenes.map((scene, i) => (
+                  <View
+                    key={scene.number}
+                    style={[styles.dot, i <= sceneIndex && styles.dotActive]}
+                  />
+                ))}
+              </View>
+              <Pressable
+                focusable
+                disabled={isFirstScene}
+                onPress={goPrev}
+                style={({focused}) => [
+                  styles.miniButton,
+                  isFirstScene && styles.controlDisabled,
+                  focused && styles.miniButtonFocused,
+                ]}>
+                <Text style={styles.miniButtonText}>‹</Text>
+              </Pressable>
+              <Pressable
+                focusable
+                onPress={goNext}
+                style={({focused}) => [
+                  styles.miniButton,
+                  focused && styles.miniButtonFocused,
+                ]}>
+                <Text style={styles.miniButtonText}>›</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Temporary audio status line (remove when narration works) */}
+          <Text
+            style={{
+              position: 'absolute',
+              left: SAFE,
+              top: 78,
+              color: '#FFE08A',
+              fontSize: 14,
+            }}>
+            {audioDebug}
+          </Text>
+
+          {/* Big caption bar */}
+          <View style={styles.captionBar}>
+            <Text style={styles.captionText}>{currentScene.narration}</Text>
+          </View>
+
+          {/* Fade-in overlay on every scene change */}
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFillObject,
+              {backgroundColor: '#100E20', opacity: fade},
+            ]}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  // =========================================================================
+  // OTHER SCREENS: pairing, genres, ending
+  // =========================================================================
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
@@ -382,7 +899,11 @@ if (cutoutResponse.ok) {
             {[
               ['01', 'Connect your phone', 'Scan the QR code to get started.'],
               ['02', 'Upload your drawing', 'Your artwork becomes the hero.'],
-              ['03', 'Choose an adventure', 'Pick a world and let the story begin.'],
+              [
+                '03',
+                'Choose an adventure',
+                'Pick a world and let the story begin.',
+              ],
             ].map(item => (
               <View style={styles.stepRow} key={item[0]}>
                 <View style={styles.stepNumber}>
@@ -398,9 +919,7 @@ if (cutoutResponse.ok) {
 
           <View style={styles.qrCard}>
             <Text style={styles.cardTitle}>Connect your phone</Text>
-            <Text style={styles.cardSubtitle}>
-              Scan to begin your story
-            </Text>
+            <Text style={styles.cardSubtitle}>Scan to begin your story</Text>
             <View style={styles.qrBox}>
               {session ? (
                 <Image
@@ -481,195 +1000,91 @@ if (cutoutResponse.ok) {
                 ))}
               </View>
 
-              {storyLoading && (
-                <Text style={styles.status}>
-                  Creating your adventure. Just a moment...
-                </Text>
-              )}
               {errorMessage ? (
                 <Text style={styles.errorText}>{errorMessage}</Text>
               ) : null}
             </View>
           </View>
+
+          {/* While the story and narration are being prepared */}
+          {storyLoading && (
+            <View style={styles.loadingOverlay}>
+              <Animated.Image
+                source={heroSource}
+                resizeMode="contain"
+                style={[
+                  styles.loadingHero,
+                  {
+                    transform: [
+                      {
+                        translateY: bob.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -14],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <Text style={styles.loadingTitle}>
+                Your hero is getting ready...
+              </Text>
+              <Text style={styles.loadingSubtitle}>
+                Painting the first page of your adventure
+              </Text>
+            </View>
+          )}
         </View>
       )}
 
-      {screen === 'story' && story && currentScene && (
-        <View style={styles.storyContent}>
-          <View style={styles.storyTop}>
-            <View style={styles.storyTitleBlock}>
-              <Text style={styles.eyebrow}>
-                YOUR DRAWING, YOUR ADVENTURE
-              </Text>
-              <Text style={styles.storyTitle}>{story.title}</Text>
-            </View>
-            <View style={styles.sceneBadge}>
-              <Text style={styles.sceneBadgeText}>
-                SCENE {sceneIndex + 1} OF {story.scenes.length}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.storyBody}>
-            <View style={styles.storyArt}>
-              <Image
-                source={
-                  [
-                    require('../backend/public/scenes/forest-background.png'),
-                    require('../backend/public/scenes/scene-2-river.png'),
-                    require('../backend/public/scenes/scene-3-cave.png'),
-                    require('../backend/public/scenes/scene-4-castle.png'),
-                    require('../backend/public/scenes/scene-5-celebration.png'),
-                  ][Math.min(sceneIndex, 4)]
-                }
-                style={StyleSheet.absoluteFillObject}
-                resizeMode="cover"
-              />
-
-              <Animated.Image
-                source={characterUri ? {uri: characterUri} : require('../backend/public/scenes/animated-elephant.png')}
-                resizeMode="contain"
-                style={{
-                  position: 'absolute',
-                  bottom: 8,
-                  width: '36%',
-                  height: '72%',
-                  transform: [
-                    {
-                      translateX:
-                        sceneIndex === 0
-                          ? characterWalk.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [-100, 100],
-                            })
-                          : 0,
-                    },
-                    {
-                      translateY:
-                        sceneIndex === 1
-                          ? characterAction.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [0, -65],
-                            })
-                          : sceneIndex === 3
-                          ? characterAction.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [0, -45],
-                            })
-                          : characterBounce,
-                    },
-                    {
-                      scale:
-                        sceneIndex === 2 || sceneIndex === 4
-                          ? characterAction.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [1, 1.15],
-                            })
-                          : 1,
-                    },
-                    {
-                      rotate:
-                        sceneIndex === 4
-                          ? characterAction.interpolate({
-                              inputRange: [0, 0.5, 1],
-                              outputRange: ['0deg', '-12deg', '0deg'],
-                            })
-                          : '0deg',
-                    },
-                  ],
-                }}
-              />
-            </View>
-
-            <View style={styles.narrationPanel}>
-              <Text style={styles.sceneNumber}>
-                CHAPTER {String(currentScene.number).padStart(2, '0')}
-              </Text>
-              <Text style={styles.sceneTitle}>{currentScene.title}</Text>
-              <View style={styles.narrationDivider} />
-              <ScrollView
-                style={styles.narrationScroll}
-                contentContainerStyle={styles.narrationScrollContent}>
-                <Text style={styles.narrationText}>
-                  {currentScene.narration}
-                </Text>
-              </ScrollView>
-              <Text style={styles.narrationNote}>
-                NARRATION TEXT PREVIEW · AUDIO COMING NEXT
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.storyControls}>
-            <Pressable
-              focusable
-              disabled={isFirstScene}
-              onPress={() =>
-                setSceneIndex(index => Math.max(0, index - 1))
-              }
-              style={({focused, pressed}) => [
-                styles.controlButton,
-                isFirstScene && styles.controlDisabled,
-                focused && styles.controlFocused,
-                pressed && styles.controlPressed,
-              ]}>
-              <Text style={styles.controlText}>‹  Previous</Text>
-            </Pressable>
-
-            <View style={styles.progressBlock}>
-              <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${
-                        ((sceneIndex + 1) / story.scenes.length) * 100
-                      }%`,
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.progressText}>
-                {sceneIndex + 1} / {story.scenes.length} scenes
-              </Text>
-            </View>
-
-            <Pressable
-              focusable
-              onPress={() => {
-                if (isLastScene) {
-                  returnToGenres();
-                } else {
-                  setSceneIndex(index =>
-                    Math.min(story.scenes.length - 1, index + 1),
-                  );
-                }
-              }}
-              style={({focused, pressed}) => [
-                styles.controlButton,
-                styles.nextButton,
-                focused && styles.controlFocused,
-                pressed && styles.controlPressed,
-              ]}>
-              <Text style={styles.nextButtonText}>
-                {isLastScene ? 'New Adventure  ↻' : 'Next Scene  ›'}
-              </Text>
-            </Pressable>
-          </View>
+      {screen === 'ending' && (
+        <View style={styles.endingContent}>
+          <Animated.Image
+            source={heroSource}
+            resizeMode="contain"
+            style={[
+              styles.endingHero,
+              {
+                transform: [
+                  {
+                    translateY: beat.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -18],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+          <Text style={styles.endingTitle}>The End</Text>
+          <Text style={styles.endingText}>
+            Every great adventure begins with a little imagination.
+          </Text>
+          <Pressable
+            focusable
+            onPress={returnToGenres}
+            style={({focused, pressed}) => [
+              styles.controlButton,
+              styles.nextButton,
+              focused && styles.controlFocused,
+              pressed && styles.controlPressed,
+            ]}>
+            <Text style={styles.nextButtonText}>New Adventure  ↻</Text>
+          </Pressable>
         </View>
       )}
 
       <View style={styles.footer}>
         <Text style={styles.footerLeft}>MADE FOR LITTLE STORYTELLERS</Text>
-        <Text style={styles.footerRight}>
-          {screen === 'story'
-            ? 'EVERY STORY LEAVES A LITTLE MAGIC ✦'
-            : 'A NEW ADVENTURE AWAITS ✦'}
-        </Text>
+        <Text style={styles.footerRight}>A NEW ADVENTURE AWAITS ✦</Text>
       </View>
     </View>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
   screen: {
@@ -956,126 +1371,151 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 8,
   },
-  storyContent: {
-    flex: 1,
+
+  // Loading overlay (while the story is being created)
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#100E20F2',
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  storyTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 13,
+  loadingHero: {
+    width: 170,
+    height: 190,
   },
-  storyTitleBlock: {
-    flex: 1,
-  },
-  storyTitle: {
+  loadingTitle: {
     color: '#FFFFFF',
-    fontSize: 27,
+    fontSize: 24,
     fontWeight: 'bold',
+    marginTop: 14,
   },
-  sceneBadge: {
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    backgroundColor: '#302447',
-    borderWidth: 1,
-    borderColor: '#67558E',
-  },
-  sceneBadgeText: {
-    color: '#D8CAFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  storyBody: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 18,
-    maxHeight: 330,
-  },
-  storyArt: {
-    flex: 1.1,
-    position: 'relative',
-    borderRadius: 18,
-    backgroundColor: '#211B39',
-    borderWidth: 1,
-    borderColor: '#3E335B',
-    overflow: 'hidden',
-    padding: 0,
-  },
-  artPlaceholder: {
-    width: '100%',
-    borderRadius: 12,
-    backgroundColor: '#302447',
-    padding: 12,
-    alignItems: 'center',
-  },
-  artPlaceholderEmoji: {
-    color: '#D8CAFF',
-    fontSize: 20,
-  },
-  artPlaceholderTitle: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  artPlaceholderText: {
+  loadingSubtitle: {
     color: '#C8BFDC',
-    fontSize: 10,
-    lineHeight: 15,
-    textAlign: 'center',
-    marginTop: 5,
+    fontSize: 13,
+    marginTop: 6,
   },
-  narrationPanel: {
-    flex: 0.9,
-    borderRadius: 18,
-    backgroundColor: '#211B39',
-    borderWidth: 1,
-    borderColor: '#3E335B',
-    padding: 18,
-  },
-  sceneNumber: {
-    color: '#C4ADFF',
-    fontSize: 9,
-    letterSpacing: 2,
-  },
-  sceneTitle: {
-    color: '#FFFFFF',
-    fontSize: 21,
-    fontWeight: 'bold',
-    marginTop: 9,
-  },
-  narrationDivider: {
-    height: 1,
-    backgroundColor: '#4B3E67',
-    marginVertical: 13,
-  },
-  narrationScroll: {
+
+  // Story stage
+  storyRoot: {
     flex: 1,
+    backgroundColor: '#000000',
   },
-  narrationScrollContent: {
-    flexGrow: 1,
+  stage: {
+    flex: 1,
+    overflow: 'hidden',
+    backgroundColor: '#100E20',
   },
-  narrationText: {
-    color: '#E0DAED',
-    fontSize: 15,
-    lineHeight: 24,
+  shadow: {
+    position: 'absolute',
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#000000',
   },
-  narrationNote: {
-    color: '#9486B2',
-    fontSize: 8,
-    letterSpacing: 1,
-    marginTop: 10,
-  },
-  storyControls: {
+  topBar: {
+    position: 'absolute',
+    top: SAFE - 16,
+    left: SAFE,
+    right: SAFE,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 16,
-    marginTop: 13,
   },
+  titlePill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: '#100E20B3',
+  },
+  titlePillText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  topRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  dots: {
+    flexDirection: 'row',
+    gap: 6,
+    marginRight: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#100E20B3',
+  },
+  dot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#4B3E67',
+  },
+  dotActive: {
+    backgroundColor: '#FFE08A',
+  },
+  miniButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#100E20B3',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  miniButtonFocused: {
+    borderColor: '#FFFFFF',
+    backgroundColor: '#B9A0FF',
+  },
+  miniButtonText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginTop: -2,
+  },
+  captionBar: {
+    position: 'absolute',
+    left: SAFE,
+    right: SAFE,
+    bottom: SAFE - 12,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 18,
+    backgroundColor: '#100E20CC',
+  },
+  captionText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    lineHeight: 31,
+    textAlign: 'center',
+  },
+
+  // Ending
+  endingContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  endingHero: {
+    width: 190,
+    height: 210,
+  },
+  endingTitle: {
+    color: '#FFFFFF',
+    fontSize: 44,
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+  endingText: {
+    color: '#C8BFDC',
+    fontSize: 16,
+    marginTop: 8,
+    marginBottom: 22,
+    textAlign: 'center',
+  },
+
+  // Shared buttons
   controlButton: {
     minWidth: 125,
     minHeight: 43,
@@ -1097,11 +1537,6 @@ const styles = StyleSheet.create({
   controlPressed: {
     opacity: 0.75,
   },
-  controlText: {
-    color: '#E0DAED',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
   nextButton: {
     backgroundColor: '#B9A0FF',
     borderColor: '#B9A0FF',
@@ -1110,28 +1545,6 @@ const styles = StyleSheet.create({
     color: '#100E20',
     fontSize: 12,
     fontWeight: 'bold',
-  },
-  progressBlock: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  progressTrack: {
-    width: '100%',
-    maxWidth: 260,
-    height: 5,
-    backgroundColor: '#382E4D',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: 5,
-    backgroundColor: '#B9A0FF',
-    borderRadius: 3,
-  },
-  progressText: {
-    color: '#A89BCB',
-    fontSize: 10,
-    marginTop: 7,
   },
   footer: {
     minHeight: 22,

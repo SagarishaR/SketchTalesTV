@@ -1,3 +1,4 @@
+const {narrate} = require('./narrate');
 
 const express = require('express');
 const cors = require('cors');
@@ -7,6 +8,8 @@ const multer = require('multer');
 const {processDrawing} = require('./imageProcessor');
 
 const app = express();
+
+app.use('/audio', express.static(require('path').join(__dirname, 'public', 'audio')));
 const PORT = process.env.PORT || 3000;
 const SESSION_TTL = 10 * 60 * 1000;
 
@@ -283,7 +286,7 @@ app.post('/api/pairing/:code/mood', (req, res) => {
 
 
 // Generate a deterministic five-scene story without external AI APIs.
-app.post('/api/pairing/:code/story', (req, res) => {
+app.post('/api/pairing/:code/story', async (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
 
@@ -450,12 +453,27 @@ app.post('/api/pairing/:code/story', (req, res) => {
     },
   };
 
+  const scenes = await Promise.all(
+    stories[genre].scenes.map(async (scene) => {
+      try {
+        const audioUrl = await narrate(
+          scene.narration,
+          `${session.code}-scene-${scene.number}.aiff`,
+        );
+        return {...scene, audioUrl};
+      } catch (error) {
+        console.error('Narration generation failed:', error.message);
+        return {...scene, audioUrl: null};
+      }
+    }),
+  );
+
   const story = {
     id: `${session.code}-${Date.now()}`,
     genre,
     title: stories[genre].title,
     heroImageAvailable: Boolean(session.processedDrawing),
-    scenes: stories[genre].scenes,
+    scenes,
     generatedAt: Date.now(),
     mode: 'mock',
   };
