@@ -1,4 +1,8 @@
-import {AudioPlayer} from '@amazon-devices/react-native-w3cmedia';
+import {
+  AudioPlayer,
+  VideoPlayer,
+  KeplerVideoSurfaceView,
+} from '@amazon-devices/react-native-w3cmedia';
 
 import React, {useEffect, useRef, useState} from 'react';
 import {
@@ -17,7 +21,7 @@ import {
 
 // Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
 // Change this one line if the address printed there is different.
-const API_BASE =  'https://took-appraisal-invention-wichita.trycloudflare.com';
+const API_BASE = 'https://arrow-detected-ratio-setting.trycloudflare.com'; 
 
 // To test the player on its own, paste any https .mp3 link here
 // (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
@@ -277,11 +281,123 @@ export const App = () => {
   const [screen, setScreen] = useState<Screen>('pairing');
   const [selectedGenre, setSelectedGenre] = useState('magical');
   const [story, setStory] = useState<Story | null>(null);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [videoSurfaceHandle, setVideoSurfaceHandle] = useState<string | null>(null);
+  const videoPlayerRef = useRef<VideoPlayer | null>(null);
+  const handleVideoSurfaceCreated = (handle: string) => {
+    setVideoSurfaceHandle(handle);
+    if (videoPlayerRef.current) {
+      videoPlayerRef.current.setSurfaceHandle(handle);
+    }
+  };
+
+  const handleVideoSurfaceDestroyed = (handle: string) => {
+    if (videoPlayerRef.current) {
+      videoPlayerRef.current.clearSurfaceHandle(handle);
+    }
+    setVideoSurfaceHandle(current => current === handle ? null : current);
+  };
+
   const [sceneIndex, setSceneIndex] = useState(0);
+  const [isStoryPaused, setIsStoryPaused] = useState(false);
   const [storyLoading, setStoryLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [stage, setStage] = useState({w: 1200, h: 650});
   const [audioDebug, setAudioDebug] = useState('audio: waiting');
+
+  // Generate and play the current scene using the Mac-hosted Wan backend.
+  useEffect(() => {
+    if (
+      screen !== 'story' ||
+      !story ||
+      !currentScene ||
+      !session?.code ||
+      !videoSurfaceHandle
+    ) {
+      return;
+    }
+
+    let active = true;
+    let player: VideoPlayer | null = null;
+    setVideoLoading(true);
+    setGeneratedVideoUrl(null);
+
+    const generateAndPlay = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE}/api/pairing/${session.code}/video/${sceneIndex + 1}`,
+          {method: 'POST'},
+        );
+        const result = await response.json();
+
+        if (!response.ok || !result.ok || !result.videoUrl) {
+          throw new Error([result.error, result.detail].filter(Boolean).join(': ') || 'Video generation failed');
+        }
+        if (!active) return;
+
+        const url = `${API_BASE}${result.videoUrl}`;
+        setGeneratedVideoUrl(url);
+
+        player = new VideoPlayer();
+        await player.initialize();
+        if (!active) {
+          await player.deinitialize();
+          player = null;
+          return;
+        }
+
+        player.setSurfaceHandle(videoSurfaceHandle);
+        videoPlayerRef.current = player;
+        player.src = url;
+        player.autoplay = true;
+        await player.play();
+
+        if (active) {
+          setVideoLoading(false);
+          setAudioDebug(`video: playing scene ${sceneIndex + 1}`);
+        }
+      } catch (error) {
+        console.warn('Wan video playback failed:', error);
+        if (active) {
+          setVideoLoading(false);
+          setAudioDebug(`video: FAILED ${String(error)}`);
+        }
+      }
+    };
+
+    void generateAndPlay();
+
+    return () => {
+      active = false;
+      const oldPlayer = player;
+      if (videoPlayerRef.current === oldPlayer) {
+        videoPlayerRef.current = null;
+      }
+      if (oldPlayer) {
+        try {
+          oldPlayer.clearSurfaceHandle(videoSurfaceHandle);
+        } catch {}
+        void Promise.resolve(oldPlayer.deinitialize()).catch(() => {});
+      }
+    };
+  }, [screen, story?.id, session?.code, sceneIndex, videoSurfaceHandle]);
+
+  // Pause/resume generated video when the phone sends an open-palm gesture.
+  useEffect(() => {
+    const player = videoPlayerRef.current;
+    if (screen !== 'story' || !player) return;
+
+    try {
+      if (isStoryPaused) {
+        void Promise.resolve(player.pause?.()).catch(() => {});
+      } else {
+        void Promise.resolve(player.play?.()).catch(() => {});
+      }
+    } catch (error) {
+      console.warn('Could not update video playback state:', error);
+    }
+  }, [isStoryPaused, screen]);
 
   // Animation drivers (all native-driven).
   const bob = useLoop(380); // quick little bounce
@@ -474,6 +590,60 @@ export const App = () => {
 
   const goPrev = () => setSceneIndex(index => Math.max(0, index - 1));
 
+  // Poll the paired-phone gesture endpoint while a story is playing.
+  useEffect(() => {
+    if (screen !== 'story' || !session?.code || !story) return;
+
+    let active = true;
+    let polling = false;
+
+    const pollGesture = async () => {
+      if (!active || polling) return;
+      polling = true;
+
+      try {
+        const response = await fetch(
+          `${API_BASE}/api/pairing/${session.code}/gesture`,
+        );
+        if (!response.ok || !active) return;
+
+        const result = await response.json();
+        const gesture = result?.gesture?.gesture as string | undefined;
+        if (!gesture || !active) return;
+
+        console.log(`TV received gesture: ${gesture}`);
+
+        switch (gesture) {
+          case 'open_palm':
+            setIsStoryPaused(previous => !previous);
+            break;
+          case 'swipe_left':
+          case 'thumbs_up':
+            setIsStoryPaused(false);
+            goNext();
+            break;
+          case 'swipe_right':
+            setIsStoryPaused(false);
+            goPrev();
+            break;
+          default:
+            break;
+        }
+      } catch (error) {
+        console.warn('Gesture polling failed:', error);
+      } finally {
+        polling = false;
+      }
+    };
+
+    const timer = setInterval(() => { void pollGesture(); }, 400);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, session?.code, story?.id]);
+
   const returnToGenres = () => {
     setStory(null);
     setSceneIndex(0);
@@ -510,7 +680,7 @@ export const App = () => {
 
   // ---- Narration: one player per scene; the audio drives the story ---------
   useEffect(() => {
-    if (screen !== 'story' || !story || !currentScene) {
+    if (screen !== 'story' || !story || !currentScene || isStoryPaused) {
       return;
     }
 
@@ -593,7 +763,7 @@ export const App = () => {
     // goNext is intentionally omitted: it is recreated every render and this
     // effect already re-runs whenever the scene changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, story?.id, sceneIndex]);
+  }, [screen, story?.id, sceneIndex, isStoryPaused]);
 
   // ---- Hero staging for the current scene ----------------------------------
   const plan = SCENE_PLAN[Math.min(sceneIndex, SCENE_PLAN.length - 1)];
@@ -768,6 +938,14 @@ export const App = () => {
             ]}
           />
 
+          {/* Generated Wan video surface */}
+          <KeplerVideoSurfaceView
+            scalingmode="fit"
+            onSurfaceViewCreated={handleVideoSurfaceCreated}
+            onSurfaceViewDestroyed={handleVideoSurfaceDestroyed}
+            style={StyleSheet.absoluteFillObject}
+          />
+
           {/* The child's drawing, as the hero */}
           <Animated.Image
             source={heroSource}
@@ -817,26 +995,24 @@ export const App = () => {
                 focusable
                 disabled={isFirstScene}
                 onPress={goPrev}
-                style={({focused}) => [
+                style={() => [
                   styles.miniButton,
                   isFirstScene && styles.controlDisabled,
-                  focused && styles.miniButtonFocused,
                 ]}>
                 <Text style={styles.miniButtonText}>‹</Text>
               </Pressable>
               <Pressable
                 focusable
                 onPress={goNext}
-                style={({focused}) => [
+                style={() => [
                   styles.miniButton,
-                  focused && styles.miniButtonFocused,
                 ]}>
                 <Text style={styles.miniButtonText}>›</Text>
               </Pressable>
             </View>
           </View>
 
-          {/* Temporary audio status line (remove when narration works) */}
+          {/* Playback status and temporary audio diagnostics */}
           <Text
             style={{
               position: 'absolute',
@@ -845,7 +1021,7 @@ export const App = () => {
               color: '#FFE08A',
               fontSize: 14,
             }}>
-            {audioDebug}
+            {isStoryPaused ? 'PAUSED · show open palm to resume' : audioDebug}
           </Text>
 
           {/* Big caption bar */}
@@ -979,10 +1155,9 @@ export const App = () => {
                     focusable
                     onPress={() => void createStory(genre.id)}
                     disabled={storyLoading}
-                    style={({focused, pressed}) => [
+                    style={({pressed}) => [
                       styles.genreCard,
                       {backgroundColor: genre.color},
-                      focused && styles.genreCardFocused,
                       pressed && styles.genreCardPressed,
                       storyLoading && styles.genreCardDisabled,
                     ]}>
@@ -1063,10 +1238,9 @@ export const App = () => {
           <Pressable
             focusable
             onPress={returnToGenres}
-            style={({focused, pressed}) => [
+            style={({pressed}) => [
               styles.controlButton,
               styles.nextButton,
-              focused && styles.controlFocused,
               pressed && styles.controlPressed,
             ]}>
             <Text style={styles.nextButtonText}>New Adventure  ↻</Text>

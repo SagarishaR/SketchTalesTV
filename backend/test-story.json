@@ -1,0 +1,31 @@
+{
+  "genre": "magical",
+  "title": "The Doorway of Dreams",
+  "scenes": [
+    {
+      "number": 1,
+      "title": "A Spark in the Garden",
+      "visualPrompt": "A moonlit garden with glowing flowers and floating golden sparkles."
+    },
+    {
+      "number": 2,
+      "title": "The Secret Path",
+      "visualPrompt": "A winding enchanted path between oversized flowers and luminous trees."
+    },
+    {
+      "number": 3,
+      "title": "The Lost Star",
+      "visualPrompt": "A tiny friendly star resting beside a sparkling stream under a deep blue sky."
+    },
+    {
+      "number": 4,
+      "title": "A Little Bit of Magic",
+      "visualPrompt": "A glowing moonbeam rising above a magical garden filled with soft golden light."
+    },
+    {
+      "number": 5,
+      "title": "The Sky Shines Again",
+      "visualPrompt": "A peaceful starry sky above the garden, with a warm magical glow surrounding the hero."
+    }
+  ]
+}

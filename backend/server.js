@@ -1,21 +1,31 @@
-const {narrate} = require('./narrate');
 
+const {narrate} = require('./narrate');
+const {generateStory} = require('./bedrockStory');
+const {generateLocalStory} = require('./localStory');
 const express = require('express');
 const cors = require('cors');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const multer = require('multer');
 const {processDrawing} = require('./imageProcessor');
+const fs = require('fs/promises');
+const os = require('os');
+const path = require('path');
+const {spawn} = require('child_process');
 
 const app = express();
 
-app.use('/audio', express.static(require('path').join(__dirname, 'public', 'audio')));
 const PORT = process.env.PORT || 3000;
 const SESSION_TTL = 10 * 60 * 1000;
+const PUBLIC_DIR = path.join(__dirname, 'public');
+const AUDIO_DIR = path.join(PUBLIC_DIR, 'audio');
+const VIDEO_DIR = path.join(PUBLIC_DIR, 'videos');
 
 app.use(cors());
 app.use(express.json({limit: '10mb'}));
-app.use(express.static('public'));
+app.use('/audio', express.static(AUDIO_DIR));
+app.use('/videos', express.static(VIDEO_DIR));
+app.use(express.static(PUBLIC_DIR));
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -53,6 +63,7 @@ function createSession() {
     drawing: null,
     processedDrawing: null,
     mood: null,
+    story: null,
   };
 
   sessions.set(code, session);
@@ -83,7 +94,7 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Create a pairing session
+// Create a pairing session.
 app.post('/api/pairing', async (req, res) => {
   try {
     const session = createSession();
@@ -110,7 +121,7 @@ app.post('/api/pairing', async (req, res) => {
       expiresInSeconds: 600,
     });
   } catch (error) {
-    console.error('Pairing creation failed:', error);
+    console.error('Pairing creation failed:', error.message);
 
     res.status(500).json({
       error: 'Could not create pairing session',
@@ -118,7 +129,7 @@ app.post('/api/pairing', async (req, res) => {
   }
 });
 
-// Pair the phone with the TV
+// Pair the phone with the TV.
 app.post('/api/pairing/:code/join', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -132,7 +143,7 @@ app.post('/api/pairing/:code/join', (req, res) => {
   });
 });
 
-// Get pairing status
+// Get pairing status.
 app.get('/api/pairing/:code', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -143,10 +154,11 @@ app.get('/api/pairing/:code', (req, res) => {
     mood: session.mood,
     hasDrawing: Boolean(session.drawing),
     hasCutout: Boolean(session.processedDrawing),
+    hasStory: Boolean(session.story),
   });
 });
 
-// Upload a drawing and generate a transparent character PNG
+// Upload a drawing and generate a transparent character PNG.
 app.post(
   '/api/pairing/:code/drawing',
   (req, res, next) => {
@@ -180,10 +192,8 @@ app.post(
     }
 
     try {
-      // Process with the local Python/OpenCV environment.
       const processedBuffer = await processDrawing(req.file.buffer);
 
-      // Recheck the session after asynchronous processing.
       const currentSession = sessions.get(req.params.code);
 
       if (
@@ -197,21 +207,22 @@ app.post(
         });
       }
 
-      // Preserve the original image for the existing TV flow.
       session.drawing = {
         mimeType: req.file.mimetype,
         data: req.file.buffer.toString('base64'),
         uploadedAt: Date.now(),
       };
 
-      // Store the transparent PNG separately.
       session.processedDrawing = {
         mimeType: 'image/png',
         data: processedBuffer.toString('base64'),
         uploadedAt: Date.now(),
       };
 
-      return res.status(201).json({
+      // A new drawing invalidates any previous story.
+      session.story = null;
+
+      res.status(201).json({
         ok: true,
         message: 'Drawing received and character extracted',
         mimeType: session.drawing.mimeType,
@@ -220,14 +231,14 @@ app.post(
     } catch (error) {
       console.error('Character extraction failed:', error.message);
 
-      return res.status(500).json({
+      res.status(500).json({
         error: 'Could not process the drawing. Please try again.',
       });
     }
   },
 );
 
-// Retrieve the original drawing for the TV
+// Retrieve the original drawing.
 app.get('/api/pairing/:code/drawing', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -245,7 +256,7 @@ app.get('/api/pairing/:code/drawing', (req, res) => {
   });
 });
 
-// Retrieve the transparent character cutout
+// Retrieve the transparent character cutout.
 app.get('/api/pairing/:code/cutout', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -263,7 +274,7 @@ app.get('/api/pairing/:code/cutout', (req, res) => {
   });
 });
 
-// Save the selected story mood
+// Save the selected story mood.
 app.post('/api/pairing/:code/mood', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -284,8 +295,7 @@ app.post('/api/pairing/:code/mood', (req, res) => {
   });
 });
 
-
-// Generate a deterministic five-scene story without external AI APIs.
+// Generate a five-scene local story without calling Bedrock.
 app.post('/api/pairing/:code/story', async (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -296,7 +306,17 @@ app.post('/api/pairing/:code/story', async (req, res) => {
     });
   }
 
-  const genre = req.body?.genre;
+  const requestedGenre = req.body?.genre || session.mood;
+  const genre = requestedGenre === 'adventure'
+    ? 'animals'
+    : requestedGenre;
+
+  const characterName =
+    typeof req.body?.characterName === 'string' &&
+    req.body.characterName.trim()
+      ? req.body.characterName.trim().slice(0, 60)
+      : 'little hero';
+
   const allowedGenres = ['magical', 'funny', 'space', 'animals'];
 
   if (!allowedGenres.includes(genre)) {
@@ -305,186 +325,241 @@ app.post('/api/pairing/:code/story', async (req, res) => {
     });
   }
 
-  const hero = 'your little hero';
+  try {
+    const generated = generateLocalStory({genre, characterName});
 
-  const stories = {
-    magical: {
-      title: 'The Doorway of Dreams',
-      scenes: [
-        {
-          number: 1,
-          title: 'A Spark in the Garden',
-          narration: `One quiet evening, ${hero} discovered a tiny golden light hiding beneath a leaf.`,
-          visualPrompt: 'A moonlit garden with glowing flowers and floating golden sparkles.',
-        },
-        {
-          number: 2,
-          title: 'The Secret Path',
-          narration: 'The light drifted away, revealing a secret path that had never been there before.',
-          visualPrompt: 'A winding enchanted path between oversized flowers and luminous trees.',
-        },
-        {
-          number: 3,
-          title: 'The Lost Star',
-          narration: 'At the end of the path, a little star was waiting. It had fallen from the night sky and could not find its way home.',
-          visualPrompt: 'A tiny friendly star resting beside a sparkling stream under a deep blue sky.',
-        },
-        {
-          number: 4,
-          title: 'A Little Bit of Magic',
-          narration: `${hero} helped the star climb onto a floating moonbeam. The whole garden began to shimmer.`,
-          visualPrompt: 'A glowing moonbeam rising above a magical garden filled with soft golden light.',
-        },
-        {
-          number: 5,
-          title: 'The Sky Shines Again',
-          narration: 'The star returned to its place in the sky. From that night on, one special star twinkled whenever the little hero looked up.',
-          visualPrompt: 'A peaceful starry sky above the garden, with a warm magical glow surrounding the hero.',
-        },
-      ],
-    },
+    const scenes = await Promise.all(
+      generated.scenes.map(async (scene) => {
+        let audioUrl = null;
 
-    funny: {
-      title: 'The Great Giggle Mix-Up',
-      scenes: [
-        {
-          number: 1,
-          title: 'A Very Strange Morning',
-          narration: `${hero} woke up to discover that everything in the garden was making silly noises.`,
-          visualPrompt: 'A cheerful garden where flowers, bushes, and garden tools look comically surprised.',
-        },
-        {
-          number: 2,
-          title: 'The Sneezing Fountain',
-          narration: 'The fountain sneezed so hard that it sprayed water in the shape of a giant moustache.',
-          visualPrompt: 'A whimsical fountain spraying water into a funny moustache shape.',
-        },
-        {
-          number: 3,
-          title: 'The Wiggly Mystery',
-          narration: 'A trail of wiggly footprints led to a bush that would not stop giggling.',
-          visualPrompt: 'A round leafy bush shaking with laughter, with silly footprints on the path.',
-        },
-        {
-          number: 4,
-          title: 'The Surprise Inside',
-          narration: `${hero} peeked behind the bush and found a tiny creature tickling the roots with a feather.`,
-          visualPrompt: 'A tiny friendly creature holding a feather behind a playful garden bush.',
-        },
-        {
-          number: 5,
-          title: 'Everybody Laughs',
-          narration: 'Soon the entire garden was laughing together. Even the fountain made one last tiny hiccup.',
-          visualPrompt: 'A joyful garden celebration with friendly creatures and little water splashes.',
-        },
-      ],
-    },
+        try {
+          audioUrl = await narrate(
+            scene.narration,
+            `${session.code}-scene-${scene.number}.aiff`,
+          );
+        } catch (error) {
+          console.error(
+            `Narration failed for scene ${scene.number}:`,
+            error.message,
+          );
+        }
 
-    space: {
-      title: 'The Little Star Explorer',
-      scenes: [
-        {
-          number: 1,
-          title: 'A Rocket of Their Own',
-          narration: `${hero} discovered a little rocket parked beside a hill, with a button glowing on its dashboard.`,
-          visualPrompt: 'A friendly small rocket parked on a grassy hill beneath a star-filled sky.',
-        },
-        {
-          number: 2,
-          title: 'Up Among the Stars',
-          narration: 'Whoosh! The rocket carried the little hero past the clouds and into the sparkling universe.',
-          visualPrompt: 'A colorful rocket flying past fluffy clouds into a vibrant starry universe.',
-        },
-        {
-          number: 3,
-          title: 'The Planet of Rings',
-          narration: 'A tiny planet with beautiful rings appeared ahead. Someone there was waving for help.',
-          visualPrompt: 'A whimsical pastel planet with rings, floating rocks, and a tiny welcoming alien.',
-        },
-        {
-          number: 4,
-          title: 'A Cosmic Delivery',
-          narration: `${hero} helped a friendly space creature return a missing moon crystal to its home.`,
-          visualPrompt: 'A friendly alien receiving a glowing crystal beside a little space station.',
-        },
-        {
-          number: 5,
-          title: 'Home Before Bedtime',
-          narration: 'With a pocket full of stardust and a head full of memories, the little explorer flew home beneath the moon.',
-          visualPrompt: 'A little rocket returning toward Earth, with a bright moon and twinkling stars.',
-        },
-      ],
-    },
+        return {...scene, audioUrl, videoUrl: null};
+      }),
+    );
 
-    animals: {
-      title: 'The Forest Friendship',
-      scenes: [
-        {
-          number: 1,
-          title: 'A Rustle in the Leaves',
-          narration: `${hero} wandered into a peaceful forest and heard a tiny squeak from beneath a fern.`,
-          visualPrompt: 'A sunny woodland with giant ferns, mushrooms, and a mysterious rustling bush.',
-        },
-        {
-          number: 2,
-          title: 'A New Friend',
-          narration: 'A little rabbit popped out. It had been looking everywhere for its family.',
-          visualPrompt: 'A small friendly rabbit peeking from a fern in a warm, colorful woodland.',
-        },
-        {
-          number: 3,
-          title: 'Following the Clues',
-          narration: 'Together, they followed soft pawprints past a babbling brook and a sleepy turtle.',
-          visualPrompt: 'A woodland trail crossing a gentle stream, with a sleepy turtle and tiny pawprints.',
-        },
-        {
-          number: 4,
-          title: 'The Family Clearing',
-          narration: `${hero} and the rabbit reached a sunny clearing where a family of rabbits was waiting.`,
-          visualPrompt: 'A sunny forest clearing where several friendly rabbits gather near flowers.',
-        },
-        {
-          number: 5,
-          title: 'Friends Forever',
-          narration: 'The little rabbit was home again. Before leaving, it gave the hero a flower as a reminder of their new friendship.',
-          visualPrompt: 'A warm forest farewell with friendly animals, colorful flowers, and golden sunlight.',
-        },
-      ],
-    },
-  };
+    const story = {
+      id: `${session.code}-${Date.now()}`,
+      genre,
+      title: generated.title,
+      heroImageAvailable: Boolean(session.processedDrawing),
+      scenes,
+      generatedAt: Date.now(),
+      mode: 'local',
+    };
 
-  const scenes = await Promise.all(
-    stories[genre].scenes.map(async (scene) => {
-      try {
-        const audioUrl = await narrate(
-          scene.narration,
-          `${session.code}-scene-${scene.number}.aiff`,
-        );
-        return {...scene, audioUrl};
-      } catch (error) {
-        console.error('Narration generation failed:', error.message);
-        return {...scene, audioUrl: null};
-      }
-    }),
-  );
+    session.genre = genre;
+    session.story = story;
 
-  const story = {
-    id: `${session.code}-${Date.now()}`,
-    genre,
-    title: stories[genre].title,
-    heroImageAvailable: Boolean(session.processedDrawing),
-    scenes,
-    generatedAt: Date.now(),
-    mode: 'mock',
-  };
+    res.status(201).json(story);
+  } catch (error) {
+    console.error('Story generation failed:', error.message);
 
-  session.genre = genre;
-  session.story = story;
-
-  return res.status(201).json(story);
+    res.status(500).json({
+      error: 'Could not generate the story',
+      detail: error.message,
+    });
+  }
 });
 
-// Return upload and request errors as JSON
+// Generate ONE Wan 2.2 video clip for a selected scene.
+app.post('/api/pairing/:code/video/:sceneNumber', async (req, res) => {
+  const session = getValidSession(req.params.code, res);
+  if (!session) return;
+
+  if (!session.processedDrawing || !session.story) {
+    return res.status(409).json({
+      error: 'Upload a drawing and generate a story first',
+    });
+  }
+
+  const sceneNumber = Number(req.params.sceneNumber);
+
+  if (
+    !Number.isInteger(sceneNumber) ||
+    sceneNumber < 1 ||
+    sceneNumber > 5
+  ) {
+    return res.status(400).json({
+      error: 'Scene number must be between 1 and 5',
+    });
+  }
+
+  const scene = session.story.scenes.find(
+    (item) => item.number === sceneNumber,
+  );
+
+  if (!scene) {
+    return res.status(404).json({error: 'Scene not found'});
+  }
+
+  if (scene.videoUrl) {
+    return res.json({
+      ok: true,
+      sceneNumber,
+      videoUrl: scene.videoUrl,
+      cached: true,
+    });
+  }
+
+  const tempDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), 'sketchtales-'),
+  );
+
+  const imagePath = path.join(tempDir, 'character.png');
+  const outputPath = path.join(
+    VIDEO_DIR,
+    `${session.code}-scene-${sceneNumber}.mp4`,
+  );
+
+  try {
+    await fs.mkdir(VIDEO_DIR, {recursive: true});
+
+    await fs.writeFile(
+      imagePath,
+      Buffer.from(session.processedDrawing.data, 'base64'),
+    );
+
+    const prompt = [
+      scene.visualPrompt,
+      scene.motionPrompt,
+      'Use the supplied image as the main character reference.',
+      'Preserve its recognizable shape, colors, and features.',
+      'Child-friendly animation, gentle motion, no text or subtitles.',
+    ].join(' ');
+
+    // Prefer the active virtual environment's Python.
+    const pythonExecutable =
+      process.env.PYTHON ||
+      (process.env.VIRTUAL_ENV
+        ? path.join(process.env.VIRTUAL_ENV, 'bin', 'python')
+        : 'python3');
+
+    const result = await new Promise((resolve, reject) => {
+      const child = spawn(
+        pythonExecutable,
+        [
+          path.join(__dirname, 'wan_client.py'),
+          imagePath,
+          prompt,
+          outputPath,
+        ],
+        {cwd: __dirname},
+      );
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      child.on('error', reject);
+
+      child.on('close', (code) => {
+        if (code !== 0) {
+          return reject(
+            new Error(
+              (stderr || stdout || `Wan exited with ${code}`).slice(-3000),
+            ),
+          );
+        }
+
+        try {
+  const lines = stdout.trim().split(/\r?\n/);
+  const jsonLine = [...lines].reverse().find((line) => {
+    try {
+      JSON.parse(line);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+
+  if (!jsonLine) {
+    throw new Error(`No JSON found in Wan output: ${stdout.slice(-2000)}`);
+  }
+
+  resolve(JSON.parse(jsonLine));
+} catch (error) {
+  reject(error);
+}
+      });
+    });
+
+    scene.videoUrl =
+      `/videos/${session.code}-scene-${sceneNumber}.mp4`;
+
+    res.json({
+      ok: true,
+      sceneNumber,
+      videoUrl: scene.videoUrl,
+      seed: result.seed,
+    });
+  } catch (error) {
+    console.error('Wan video generation failed:', error.message);
+
+    res.status(502).json({
+      error: 'Wan video generation failed',
+      detail: error.message,
+    });
+  } finally {
+    await fs.rm(tempDir, {recursive: true, force: true});
+  }
+});
+// Receive gesture commands from the paired phone.
+app.post('/api/pairing/:code/gesture', express.json(), (req, res) => {
+  const session = getValidSession(req.params.code, res);
+  if (!session) return;
+
+  if (!session.story) {
+    return res.status(409).json({
+      error: 'Gestures are available when the story is ready',
+    });
+  }
+
+  const allowedGestures = ['open_palm', 'swipe_left', 'swipe_right', 'thumbs_up'];
+  const { gesture } = req.body || {};
+
+  if (!allowedGestures.includes(gesture)) {
+    return res.status(400).json({ error: 'Invalid gesture' });
+  }
+
+  session.lastGesture = {
+    gesture,
+    timestamp: Date.now(),
+  };
+
+  console.log(`Gesture received for ${session.code}: ${gesture}`);
+  res.json({ ok: true });
+});
+
+// Let the TV check for a new gesture.
+app.get('/api/pairing/:code/gesture', (req, res) => {
+  const session = getValidSession(req.params.code, res);
+  if (!session) return;
+
+  const gesture = session.lastGesture || null;
+  session.lastGesture = null;
+
+  res.json({ gesture });
+});
+
+// Return upload and request errors as JSON.
 app.use((error, _req, res, _next) => {
   console.error('Request error:', error.message);
 

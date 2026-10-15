@@ -1,0 +1,79 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SketchTales TV — Gestures</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #171727; color: white; padding: 20px; }
+    video { width: min(90vw, 640px); border-radius: 16px; transform: scaleX(-1); }
+    button { padding: 12px 20px; margin: 12px; border: 0; border-radius: 8px; cursor: pointer; }
+    #status { font-size: 1.3rem; margin: 16px; }
+  </style>
+</head>
+<body>
+  <h1>SketchTales TV Gestures</h1>
+  <p id="status">Press Start Camera</p>
+  <button id="start">Start Camera</button>
+  <div><video id="camera" autoplay playsinline muted></video></div>
+  <p>Detected gesture: <strong id="gesture">None</strong></p>
+
+  <script type="module">
+    import {
+      GestureRecognizer,
+      FilesetResolver
+    } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs";
+
+    const MODEL_URL =
+      "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task";
+
+    const video = document.getElementById("camera");
+    const status = document.getElementById("status");
+    const output = document.getElementById("gesture");
+    const start = document.getElementById("start");
+
+    let recognizer;
+    let lastFrameTime = -1;
+
+    start.onclick = async () => {
+      try {
+        start.disabled = true;
+        status.textContent = "Loading hand recognition model…";
+
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm"
+        );
+
+        recognizer = await GestureRecognizer.createFromOptions(vision, {
+          baseOptions: { modelAssetPath: MODEL_URL },
+          runningMode: "VIDEO",
+          numHands: 1
+        });
+
+        video.srcObject = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+          audio: false
+        });
+
+        await video.play();
+        status.textContent = "Camera running — show your hand";
+        requestAnimationFrame(detect);
+      } catch (error) {
+        status.textContent = "Error: " + error.message;
+        start.disabled = false;
+      }
+    };
+
+    function detect() {
+      if (video.readyState >= 2 && video.currentTime !== lastFrameTime) {
+        lastFrameTime = video.currentTime;
+        const result = recognizer.recognizeForVideo(video, performance.now());
+        const name = result.gestures?.[0]?.[0]?.categoryName ?? "None";
+        output.textContent = name;
+      }
+      requestAnimationFrame(detect);
+    }
+  </script>
+</body>
+</html>

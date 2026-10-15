@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SketchTales — Connect & Upload</title>
+
   <style>
     * { box-sizing: border-box; }
 
@@ -71,11 +72,19 @@
       border-radius: 12px;
     }
 
-    #uploadCard { display: none; }
-    #status { overflow-wrap: anywhere; }
+    #gestureVideo {
+      width: 100%;
+      margin-top: 12px;
+      border-radius: 12px;
+      background: #11131d;
+    }
+
+    #uploadCard, #gestureCard { display: none; }
+    #status, #gestureStatus { overflow-wrap: anywhere; }
     .hint { font-size: 13px; }
   </style>
 </head>
+
 <body>
   <main>
     <h1>SketchTales ✦</h1>
@@ -120,12 +129,36 @@
       </form>
     </section>
 
+    <section class="card" id="gestureCard">
+      <h2>3. Story controls</h2>
+      <p>Your story is ready! Enable gestures when you want to control the TV.</p>
+      <p class="hint">
+        Video processing stays on this phone. Only gesture commands are sent.
+      </p>
+
+      <button id="useGesturesButton" type="button">Use gestures</button>
+
+      <div id="gestureArea" style="display:none">
+        <video id="gestureVideo" autoplay playsinline muted></video>
+        <p>Keep this phone awake and visible, facing you.</p>
+        <p id="gestureStatus" role="status" aria-live="polite">
+          Camera is off.
+        </p>
+        <button id="stopGesturesButton" type="button">Stop camera</button>
+      </div>
+    </section>
+
     <section class="card">
       <p id="status" role="status" aria-live="polite">Ready to connect.</p>
     </section>
   </main>
 
-  <script>
+  <script type="module">
+    import {
+      GestureRecognizer,
+      FilesetResolver
+    } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs';
+
     const params = new URLSearchParams(location.search);
     const codeInput = document.getElementById('code');
     const status = document.getElementById('status');
@@ -135,44 +168,83 @@
     const connectButton = document.getElementById('connectButton');
     const uploadButton = document.getElementById('uploadButton');
 
+    const gestureCard = document.getElementById('gestureCard');
+    const gestureArea = document.getElementById('gestureArea');
+    const gestureVideo = document.getElementById('gestureVideo');
+    const gestureStatus = document.getElementById('gestureStatus');
+    const useGesturesButton = document.getElementById('useGesturesButton');
+    const stopGesturesButton = document.getElementById('stopGesturesButton');
+
     let paired = false;
     let previewUrl = null;
+    let gestureStream = null;
+    let gestureRecognizer = null;
+    let gestureRunning = false;
+    let lastGestureTime = 0;
+    let previousWristX = null;
+    let previousWristTime = 0;
+    let pendingPose = '';
+    let pendingPoseSince = 0;
+    let lastSentGesture = '';
 
     codeInput.value = params.get('code') || '';
 
-    document.getElementById('pairForm').addEventListener('submit', async event => {
-      event.preventDefault();
-
-      const code = codeInput.value.trim();
-
-      if (!/^\d{6}$/.test(code)) {
-        status.textContent = 'Enter a valid six-digit code.';
-        return;
-      }
-
-      connectButton.disabled = true;
-      status.textContent = 'Connecting to your TV...';
+    async function checkStoryReady() {
+      if (!paired) return;
 
       try {
-        const response = await fetch(`/api/pairing/${code}/join`, {
-          method: 'POST'
-        });
+        const response = await fetch(
+          `/api/pairing/${codeInput.value.trim()}`
+        );
 
-        const result = await response.json();
+        if (!response.ok) return;
 
-        if (!response.ok) {
-          throw new Error(result.error || 'Connection failed');
+        const session = await response.json();
+        gestureCard.style.display = session.hasStory ? 'block' : 'none';
+      } catch (error) {
+        console.error('Could not check story status:', error);
+      }
+    }
+
+    setInterval(checkStoryReady, 2000);
+
+    document.getElementById('pairForm').addEventListener(
+      'submit',
+      async event => {
+        event.preventDefault();
+
+        const code = codeInput.value.trim();
+
+        if (!/^\d{6}$/.test(code)) {
+          status.textContent = 'Enter a valid six-digit code.';
+          return;
         }
 
-        paired = true;
-        uploadCard.style.display = 'block';
-        status.textContent = 'Connected! Choose your drawing below.';
-      } catch (error) {
-        status.textContent = error.message || 'Could not connect. Try again.';
-      } finally {
-        connectButton.disabled = false;
+        connectButton.disabled = true;
+        status.textContent = 'Connecting to your TV...';
+
+        try {
+          const response = await fetch(`/api/pairing/${code}/join`, {
+            method: 'POST'
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || 'Connection failed');
+          }
+
+          paired = true;
+          uploadCard.style.display = 'block';
+          status.textContent = 'Connected! Choose your drawing below.';
+          await checkStoryReady();
+        } catch (error) {
+          status.textContent = error.message || 'Could not connect. Try again.';
+        } finally {
+          connectButton.disabled = false;
+        }
       }
-    });
+    );
 
     drawingInput.addEventListener('change', () => {
       const file = drawingInput.files[0];
@@ -204,50 +276,196 @@
       status.textContent = 'Preview your drawing, then upload it.';
     });
 
-    document.getElementById('uploadForm').addEventListener('submit', async event => {
-      event.preventDefault();
+    document.getElementById('uploadForm').addEventListener(
+      'submit',
+      async event => {
+        event.preventDefault();
 
-      if (!paired) {
-        status.textContent = 'Connect to the TV first.';
-        return;
-      }
-
-      const file = drawingInput.files[0];
-
-      if (!file) {
-        status.textContent = 'Choose a drawing first.';
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('drawing', file);
-
-      uploadButton.disabled = true;
-      status.textContent = 'Uploading your drawing...';
-
-      try {
-        const response = await fetch(
-          `/api/pairing/${codeInput.value.trim()}/drawing`,
-          {
-            method: 'POST',
-            body: formData
-          }
-        );
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Upload failed');
+        if (!paired) {
+          status.textContent = 'Connect to the TV first.';
+          return;
         }
 
-        status.textContent =
-          'Drawing uploaded successfully! Look at your TV for the next step.';
+        const file = drawingInput.files[0];
+
+        if (!file) {
+          status.textContent = 'Choose a drawing first.';
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('drawing', file);
+
+        uploadButton.disabled = true;
+        status.textContent = 'Uploading your drawing...';
+
+        try {
+          const response = await fetch(
+            `/api/pairing/${codeInput.value.trim()}/drawing`,
+            { method: 'POST', body: formData }
+          );
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || 'Upload failed');
+          }
+
+          status.textContent =
+            'Drawing uploaded successfully! Look at your TV for the next step.';
+        } catch (error) {
+          status.textContent = error.message || 'Upload failed. Please try again.';
+        } finally {
+          uploadButton.disabled = false;
+        }
+      }
+    );
+
+    async function sendGesture(gesture) {
+      const code = codeInput.value.trim();
+
+      try {
+        const response = await fetch(`/api/pairing/${code}/gesture`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gesture })
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || 'Could not send gesture');
+        }
+
+        gestureStatus.textContent = `Sent: ${gesture}`;
       } catch (error) {
-        status.textContent = error.message || 'Upload failed. Please try again.';
-      } finally {
-        uploadButton.disabled = false;
+        gestureStatus.textContent = error.message;
+      }
+    }
+
+    useGesturesButton.addEventListener('click', async () => {
+      try {
+        useGesturesButton.disabled = true;
+        gestureStatus.textContent = 'Loading hand recognition...';
+
+        const vision = await FilesetResolver.forVisionTasks(
+          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
+        );
+
+        gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath:
+              'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task'
+          },
+          runningMode: 'VIDEO',
+          numHands: 1
+        });
+
+        gestureStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+          audio: false
+        });
+
+        gestureVideo.srcObject = gestureStream;
+        await gestureVideo.play();
+
+        gestureArea.style.display = 'block';
+        gestureRunning = true;
+        lastGestureTime = 0;
+        previousWristX = null;
+        pendingPose = '';
+        lastSentGesture = '';
+        gestureStatus.textContent = 'Camera on. Show your hand.';
+        detectPhoneGestures();
+      } catch (error) {
+        gestureStatus.textContent = 'Could not start camera: ' + error.message;
+        useGesturesButton.disabled = false;
       }
     });
+
+    stopGesturesButton.addEventListener('click', stopCamera);
+
+    function stopCamera() {
+      gestureRunning = false;
+
+      if (gestureStream) {
+        gestureStream.getTracks().forEach(track => track.stop());
+        gestureStream = null;
+      }
+
+      gestureVideo.srcObject = null;
+      gestureArea.style.display = 'none';
+      gestureStatus.textContent = 'Camera is off.';
+      useGesturesButton.disabled = false;
+    }
+
+    async function detectPhoneGestures() {
+      if (!gestureRunning || !gestureRecognizer) return;
+
+      try {
+        if (gestureVideo.readyState >= 2) {
+          const now = performance.now();
+          const result = gestureRecognizer.recognizeForVideo(gestureVideo, now);
+          const pose = result.gestures?.[0]?.[0]?.categoryName || 'None';
+
+          let action = '';
+
+          if (pose !== pendingPose) {
+            pendingPose = pose;
+            pendingPoseSince = now;
+          }
+
+          // Hold static poses for 600 ms before sending.
+          if (now - pendingPoseSince >= 600) {
+            if (pose === 'Open_Palm') action = 'open_palm';
+            if (pose === 'Thumb_Up') action = 'thumbs_up';
+          }
+
+          // Detect a swipe using wrist movement over a short time window.
+          const wrist = result.landmarks?.[0]?.[0];
+
+          if (wrist) {
+            if (previousWristX === null || previousWristTime === 0) {
+              previousWristX = wrist.x;
+              previousWristTime = now;
+            } else {
+              const elapsed = now - previousWristTime;
+              const dx = wrist.x - previousWristX;
+
+              if (elapsed >= 120 && elapsed <= 700 && Math.abs(dx) > 0.18) {
+                // Camera is mirrored for the selfie view: map movement to
+                // the user's perceived left/right direction.
+                action = dx < 0 ? 'swipe_left' : 'swipe_right';
+                previousWristX = null;
+                previousWristTime = 0;
+              } else if (elapsed > 700) {
+                previousWristX = wrist.x;
+                previousWristTime = now;
+              }
+            }
+          } else {
+            previousWristX = null;
+            previousWristTime = 0;
+          }
+
+          gestureStatus.textContent = `Detected: ${pose}`;
+
+          // Send once per action, with a 1.5-second cooldown.
+          if (action && now - lastGestureTime > 1500 && action !== lastSentGesture) {
+            lastGestureTime = now;
+            lastSentGesture = action;
+            await sendGesture(action);
+          }
+
+          if (!action) lastSentGesture = '';
+        }
+      } catch (error) {
+        gestureStatus.textContent = 'Gesture detection error: ' + error.message;
+      }
+
+      if (gestureRunning) setTimeout(detectPhoneGestures, 100);
+    }
+
+    window.addEventListener('pagehide', stopCamera);
   </script>
 </body>
 </html>
