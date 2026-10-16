@@ -1,7 +1,5 @@
-
 const {narrate} = require('./narrate');
-const {generateStory} = require('./bedrockStory');
-const {generateLocalStory} = require('./localStory');
+const {generateRecipeStory} = require('./recipeStory');
 const express = require('express');
 const cors = require('cors');
 const QRCode = require('qrcode');
@@ -9,9 +7,7 @@ const crypto = require('crypto');
 const multer = require('multer');
 const {processDrawing} = require('./imageProcessor');
 const fs = require('fs/promises');
-const os = require('os');
 const path = require('path');
-const {spawn} = require('child_process');
 
 const app = express();
 
@@ -64,6 +60,7 @@ function createSession() {
     processedDrawing: null,
     mood: null,
     story: null,
+    recentRecipeHashes: [],
   };
 
   sessions.set(code, session);
@@ -326,7 +323,26 @@ app.post('/api/pairing/:code/story', async (req, res) => {
   }
 
   try {
-    const generated = generateLocalStory({genre, characterName});
+    const exclude = Array.isArray(req.body?.exclude)
+      ? req.body.exclude.filter(
+          (hash) => typeof hash === 'string' && /^[a-f0-9]{40}$/.test(hash)
+        ).slice(-200)
+      : [];
+
+    const generated = generateRecipeStory({
+      genre,
+      characterName,
+      seed: session.code,
+      exclude: [...new Set([
+        ...(session.recentRecipeHashes || []),
+        ...exclude,
+      ])],
+    });
+
+    session.recentRecipeHashes = [
+      ...(session.recentRecipeHashes || []),
+      generated.recipe.hash,
+    ].slice(-200);
 
     const scenes = await Promise.all(
       generated.scenes.map(async (scene) => {
@@ -352,6 +368,8 @@ app.post('/api/pairing/:code/story', async (req, res) => {
       id: `${session.code}-${Date.now()}`,
       genre,
       title: generated.title,
+      recipe: generated.recipe,
+      seed: generated.seed,
       heroImageAvailable: Boolean(session.processedDrawing),
       scenes,
       generatedAt: Date.now(),
@@ -372,155 +390,6 @@ app.post('/api/pairing/:code/story', async (req, res) => {
   }
 });
 
-// Generate ONE Wan 2.2 video clip for a selected scene.
-app.post('/api/pairing/:code/video/:sceneNumber', async (req, res) => {
-  const session = getValidSession(req.params.code, res);
-  if (!session) return;
-
-  if (!session.processedDrawing || !session.story) {
-    return res.status(409).json({
-      error: 'Upload a drawing and generate a story first',
-    });
-  }
-
-  const sceneNumber = Number(req.params.sceneNumber);
-
-  if (
-    !Number.isInteger(sceneNumber) ||
-    sceneNumber < 1 ||
-    sceneNumber > 5
-  ) {
-    return res.status(400).json({
-      error: 'Scene number must be between 1 and 5',
-    });
-  }
-
-  const scene = session.story.scenes.find(
-    (item) => item.number === sceneNumber,
-  );
-
-  if (!scene) {
-    return res.status(404).json({error: 'Scene not found'});
-  }
-
-  if (scene.videoUrl) {
-    return res.json({
-      ok: true,
-      sceneNumber,
-      videoUrl: scene.videoUrl,
-      cached: true,
-    });
-  }
-
-  const tempDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), 'sketchtales-'),
-  );
-
-  const imagePath = path.join(tempDir, 'character.png');
-  const outputPath = path.join(
-    VIDEO_DIR,
-    `${session.code}-scene-${sceneNumber}.mp4`,
-  );
-
-  try {
-    await fs.mkdir(VIDEO_DIR, {recursive: true});
-
-    await fs.writeFile(
-      imagePath,
-      Buffer.from(session.processedDrawing.data, 'base64'),
-    );
-
-    const prompt = [
-      scene.visualPrompt,
-      scene.motionPrompt,
-      'Use the supplied image as the main character reference.',
-      'Preserve its recognizable shape, colors, and features.',
-      'Child-friendly animation, gentle motion, no text or subtitles.',
-    ].join(' ');
-
-    // Prefer the active virtual environment's Python.
-    const pythonExecutable =
-      process.env.PYTHON ||
-      (process.env.VIRTUAL_ENV
-        ? path.join(process.env.VIRTUAL_ENV, 'bin', 'python')
-        : 'python3');
-
-    const result = await new Promise((resolve, reject) => {
-      const child = spawn(
-        pythonExecutable,
-        [
-          path.join(__dirname, 'wan_client.py'),
-          imagePath,
-          prompt,
-          outputPath,
-        ],
-        {cwd: __dirname},
-      );
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      child.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      child.on('error', reject);
-
-      child.on('close', (code) => {
-        if (code !== 0) {
-          return reject(
-            new Error(
-              (stderr || stdout || `Wan exited with ${code}`).slice(-3000),
-            ),
-          );
-        }
-
-        try {
-  const lines = stdout.trim().split(/\r?\n/);
-  const jsonLine = [...lines].reverse().find((line) => {
-    try {
-      JSON.parse(line);
-      return true;
-    } catch {
-      return false;
-    }
-  });
-
-  if (!jsonLine) {
-    throw new Error(`No JSON found in Wan output: ${stdout.slice(-2000)}`);
-  }
-
-  resolve(JSON.parse(jsonLine));
-} catch (error) {
-  reject(error);
-}
-      });
-    });
-
-    scene.videoUrl =
-      `/videos/${session.code}-scene-${sceneNumber}.mp4`;
-
-    res.json({
-      ok: true,
-      sceneNumber,
-      videoUrl: scene.videoUrl,
-      seed: result.seed,
-    });
-  } catch (error) {
-    console.error('Wan video generation failed:', error.message);
-
-    res.status(502).json({
-      error: 'Wan video generation failed',
-      detail: error.message,
-    });
-  } finally {
-    await fs.rm(tempDir, {recursive: true, force: true});
-  }
-});
 // Receive gesture commands from the paired phone.
 app.post('/api/pairing/:code/gesture', express.json(), (req, res) => {
   const session = getValidSession(req.params.code, res);

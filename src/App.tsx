@@ -21,12 +21,18 @@ import {
 
 // Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
 // Change this one line if the address printed there is different.
-const API_BASE = 'https://arrow-detected-ratio-setting.trycloudflare.com'; 
+// NOTE: a Cloudflare quick-tunnel address changes every time the tunnel restarts.
+const API_BASE = 'https://gently-delivering-viewers-annotated.trycloudflare.com';
 
 // To test the player on its own, paste any https .mp3 link here
 // (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
 // Leave it as '' for normal use.
 const AUDIO_TEST_URL = '';
+const LOCAL_SCENE_VIDEO = `${API_BASE}/scenes/complete-crystal-bell-story.mp4`;
+
+// true  = play the MP4 film on the video surface (the film draws over the PNG backgrounds).
+// false = in-app stage: scene background images + the animated hero (the old fallback).
+const USE_VIDEO = false;
 
 // Genres shown on the selection screen. Add 'funny' and 'animals' back
 // once you have matching artwork for them.
@@ -45,11 +51,11 @@ const SAFE = 40;
 
 // Metro needs static require() paths, so every image is listed explicitly.
 const BG = {
-  forest: require('../backend/public/scenes/forest-background.png'),
-  river: require('../backend/public/scenes/scene-2-river.png'),
-  cave: require('../backend/public/scenes/scene-3-cave.png'),
-  castle: require('../backend/public/scenes/scene-4-castle.png'),
-  celebration: require('../backend/public/scenes/scene-5-celebration.png'),
+  forest: require('../backend/public/scenes/scene-1-dinosaur-valley.png'),
+  river: require('../backend/public/scenes/scene-2-crystal-bell.png'),
+  cave: require('../backend/public/scenes/scene-3-dragon-friend.png'),
+  castle: require('../backend/public/scenes/scene-4-gentle-wind.png'),
+  celebration: require('../backend/public/scenes/scene-5-friendship-festival.png'),
 };
 
 const DEFAULT_ART = [BG.forest, BG.river, BG.cave, BG.castle, BG.celebration];
@@ -86,15 +92,21 @@ const FALLBACK_HERO = require('../backend/public/scenes/animated-elephant.png');
 type Motion = 'walk' | 'hop' | 'pop' | 'celebrate';
 
 // x = horizontal centre of the hero (0..1 of stage width)
-// y = where the hero's feet stand (0..1 of stage height)
+// y = where the hero's feet stand (0..1 of stage height)  ← tune per scene
 // h = hero height as a fraction of stage height
+//
+// Tuned so feet sit on the ground line of each background PNG.
+// If a character still floats/sinks, change that scene's y (higher y = lower on screen).
 const SCENE_PLAN: {x: number; y: number; h: number; motion: Motion}[] = [
-  {x: 0.3, y: 0.74, h: 0.48, motion: 'walk'},
-  {x: 0.32, y: 0.74, h: 0.48, motion: 'hop'},
-  {x: 0.3, y: 0.74, h: 0.48, motion: 'pop'},
-  {x: 0.34, y: 0.74, h: 0.48, motion: 'hop'},
-  {x: 0.5, y: 0.74, h: 0.48, motion: 'celebrate'},
+  {x: 0.30, y: 0.88, h: 0.28, motion: 'walk'},      // scene 1 – dinosaur valley
+  {x: 0.32, y: 0.86, h: 0.28, motion: 'hop'},       // scene 2 – crystal bell
+  {x: 0.30, y: 0.90, h: 0.26, motion: 'pop'},       // scene 3 – dragon friend
+  {x: 0.34, y: 0.87, h: 0.28, motion: 'hop'},       // scene 4 – gentle wind
+  {x: 0.50, y: 0.89, h: 0.30, motion: 'celebrate'}, // scene 5 – friendship festival
 ];
+
+// Set to true while you fine-tune ground positions, then set back to false.
+const SHOW_GROUND_GUIDE = false;
 
 // Twinkling sparkles scattered over each scene (fractions of the stage).
 const SPARKS = [
@@ -296,7 +308,7 @@ export const App = () => {
     if (videoPlayerRef.current) {
       videoPlayerRef.current.clearSurfaceHandle(handle);
     }
-    setVideoSurfaceHandle(current => current === handle ? null : current);
+    setVideoSurfaceHandle(current => (current === handle ? null : current));
   };
 
   const [sceneIndex, setSceneIndex] = useState(0);
@@ -305,60 +317,50 @@ export const App = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [stage, setStage] = useState({w: 1200, h: 650});
   const [audioDebug, setAudioDebug] = useState('audio: waiting');
+  // Width / height of the hero picture, so its box matches its real shape and
+  // the feet sit exactly on the floor line (a square box floats wide pictures).
+  const [heroAspect, setHeroAspect] = useState(1);
 
-  // Generate and play the current scene using the Mac-hosted Wan backend.
+  // Play the locally rendered film on the video surface.
+  // Skipped entirely when USE_VIDEO is false, so the in-app stage shows instead.
   useEffect(() => {
-    if (
-      screen !== 'story' ||
-      !story ||
-      !currentScene ||
-      !session?.code ||
-      !videoSurfaceHandle
-    ) {
+    if (!USE_VIDEO || screen !== 'story' || !videoSurfaceHandle) {
       return;
     }
 
     let active = true;
     let player: VideoPlayer | null = null;
-    setVideoLoading(true);
-    setGeneratedVideoUrl(null);
 
-    const generateAndPlay = async () => {
+    const playLocalScene = async () => {
+      setVideoLoading(true);
+      setAudioDebug('video: loading local scene');
+
       try {
-        const response = await fetch(
-          `${API_BASE}/api/pairing/${session.code}/video/${sceneIndex + 1}`,
-          {method: 'POST'},
-        );
-        const result = await response.json();
-
-        if (!response.ok || !result.ok || !result.videoUrl) {
-          throw new Error([result.error, result.detail].filter(Boolean).join(': ') || 'Video generation failed');
-        }
-        if (!active) return;
-
-        const url = `${API_BASE}${result.videoUrl}`;
-        setGeneratedVideoUrl(url);
-
         player = new VideoPlayer();
         await player.initialize();
-        if (!active) {
-          await player.deinitialize();
+
+        if (!active || !player) {
+          await player?.deinitialize();
           player = null;
           return;
         }
 
         player.setSurfaceHandle(videoSurfaceHandle);
         videoPlayerRef.current = player;
-        player.src = url;
+        player.src = LOCAL_SCENE_VIDEO;
         player.autoplay = true;
+
+        setGeneratedVideoUrl(LOCAL_SCENE_VIDEO);
+
         await player.play();
 
         if (active) {
           setVideoLoading(false);
-          setAudioDebug(`video: playing scene ${sceneIndex + 1}`);
+          setAudioDebug('video: playing garden elephant test');
         }
       } catch (error) {
-        console.warn('Wan video playback failed:', error);
+        console.warn('Local scene playback failed:', error);
+
         if (active) {
           setVideoLoading(false);
           setAudioDebug(`video: FAILED ${String(error)}`);
@@ -366,27 +368,31 @@ export const App = () => {
       }
     };
 
-    void generateAndPlay();
+    void playLocalScene();
 
     return () => {
       active = false;
+
       const oldPlayer = player;
+
       if (videoPlayerRef.current === oldPlayer) {
         videoPlayerRef.current = null;
       }
+
       if (oldPlayer) {
         try {
           oldPlayer.clearSurfaceHandle(videoSurfaceHandle);
         } catch {}
+
         void Promise.resolve(oldPlayer.deinitialize()).catch(() => {});
       }
     };
-  }, [screen, story?.id, session?.code, sceneIndex, videoSurfaceHandle]);
+  }, [screen, videoSurfaceHandle]);
 
-  // Pause/resume generated video when the phone sends an open-palm gesture.
+  // Pause/resume the film when the phone sends an open-palm gesture.
   useEffect(() => {
     const player = videoPlayerRef.current;
-    if (screen !== 'story' || !player) return;
+    if (!USE_VIDEO || screen !== 'story' || !player) return;
 
     try {
       if (isStoryPaused) {
@@ -398,6 +404,31 @@ export const App = () => {
       console.warn('Could not update video playback state:', error);
     }
   }, [isStoryPaused, screen]);
+
+  // Measure the hero picture (the uploaded cutout, or the fallback).
+  useEffect(() => {
+    let active = true;
+    const apply = (w: number, h: number) => {
+      if (active && w > 0 && h > 0) {
+        setHeroAspect(w / h);
+      }
+    };
+    try {
+      if (characterUri) {
+        Image.getSize(characterUri, apply, () => {});
+      } else {
+        const src = Image.resolveAssetSource(FALLBACK_HERO);
+        if (src && src.width && src.height) {
+          apply(src.width, src.height);
+        }
+      }
+    } catch (error) {
+      console.warn('Could not measure the hero picture:', error);
+    }
+    return () => {
+      active = false;
+    };
+  }, [characterUri]);
 
   // Animation drivers (all native-driven).
   const bob = useLoop(380); // quick little bounce
@@ -636,7 +667,9 @@ export const App = () => {
       }
     };
 
-    const timer = setInterval(() => { void pollGesture(); }, 400);
+    const timer = setInterval(() => {
+      void pollGesture();
+    }, 400);
     return () => {
       active = false;
       clearInterval(timer);
@@ -767,8 +800,9 @@ export const App = () => {
 
   // ---- Hero staging for the current scene ----------------------------------
   const plan = SCENE_PLAN[Math.min(sceneIndex, SCENE_PLAN.length - 1)];
-  const heroH = stage.h * plan.h;
-  const heroW = heroH;
+  const maxHeroW = stage.w * 0.6;
+  const heroW = Math.min(stage.h * plan.h * heroAspect, maxHeroW);
+  const heroH = heroW / heroAspect;
   const heroLeft = plan.x * stage.w - heroW / 2;
   const heroTop = plan.y * stage.h - heroH;
 
@@ -868,30 +902,16 @@ export const App = () => {
               h: e.nativeEvent.layout.height,
             })
           }>
-          {/* Background with a slow camera drift */}
-          <Animated.Image
-            source={artSource}
-            resizeMode="cover"
-            style={[
-              StyleSheet.absoluteFillObject,
-              {
-                transform: [
-                  {
-                    scale: drift.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1.0, 1.1],
-                    }),
-                  },
-                  {
-                    translateX: drift.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, -stage.w * 0.03],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
+          {/* Background: full stage, keep aspect ratio (no stretch zoom) */}
+          <Image
+  source={artSource}
+  resizeMode="contain"
+  style={{
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  }}
+/>
 
           {/* Twinkling sparkles */}
           {SPARKS.map((spark, i) => (
@@ -905,7 +925,7 @@ export const App = () => {
               {
                 width: heroW * 0.55,
                 left: plan.x * stage.w - (heroW * 0.55) / 2,
-                top: plan.y * stage.h - 10,
+                top: plan.y * stage.h - 8,
                 opacity:
                   plan.motion === 'hop' || plan.motion === 'celebrate'
                     ? beat.interpolate({
@@ -938,13 +958,16 @@ export const App = () => {
             ]}
           />
 
-          {/* Generated Wan video surface */}
-          <KeplerVideoSurfaceView
-            scalingmode="fit"
-            onSurfaceViewCreated={handleVideoSurfaceCreated}
-            onSurfaceViewDestroyed={handleVideoSurfaceDestroyed}
-            style={StyleSheet.absoluteFillObject}
-          />
+          {/* Film surface: only mounted when USE_VIDEO is true. When it is
+              mounted it covers the background images above. */}
+          {USE_VIDEO ? (
+            <KeplerVideoSurfaceView
+              scalingmode="fit"
+              onSurfaceViewCreated={handleVideoSurfaceCreated}
+              onSurfaceViewDestroyed={handleVideoSurfaceDestroyed}
+              style={StyleSheet.absoluteFillObject}
+            />
+          ) : null}
 
           {/* The child's drawing, as the hero */}
           <Animated.Image
@@ -959,6 +982,22 @@ export const App = () => {
               transform: heroTransform(),
             }}
           />
+
+          {/* Temporary ground guide – remove when positions look correct */}
+          {SHOW_GROUND_GUIDE ? (
+            <View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: plan.y * stage.h,
+                height: 2,
+                backgroundColor: 'lime',
+                opacity: 0.85,
+              }}
+            />
+          ) : null}
 
           {/* Foreground strip in front of the hero (optional) */}
           {FOREGROUND ? (
@@ -1004,9 +1043,7 @@ export const App = () => {
               <Pressable
                 focusable
                 onPress={goNext}
-                style={() => [
-                  styles.miniButton,
-                ]}>
+                style={() => [styles.miniButton]}>
                 <Text style={styles.miniButtonText}>›</Text>
               </Pressable>
             </View>
@@ -1511,7 +1548,7 @@ const styles = StyleSheet.create({
   },
   genreCardFocused: {
     borderColor: '#FFFFFF',
-    transform: [{scale: 1.025}],
+    transform: [{scale: 1}],
   },
   genreCardPressed: {
     opacity: 0.8,
