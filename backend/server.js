@@ -1,5 +1,7 @@
+
 const {narrate} = require('./narrate');
 const {generateRecipeStory} = require('./recipeStory');
+const {matchStoryBackgrounds} = require('./backgroundMatcher');
 const express = require('express');
 const cors = require('cors');
 const QRCode = require('qrcode');
@@ -292,7 +294,7 @@ app.post('/api/pairing/:code/mood', (req, res) => {
   });
 });
 
-// Generate a five-scene local story without calling Bedrock.
+// Generate a local story and attach matching library backgrounds.
 app.post('/api/pairing/:code/story', async (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -329,7 +331,7 @@ app.post('/api/pairing/:code/story', async (req, res) => {
         ).slice(-200)
       : [];
 
-    const generated = generateRecipeStory({
+    const generatedBase = generateRecipeStory({
       genre,
       characterName,
       seed: session.code,
@@ -341,9 +343,57 @@ app.post('/api/pairing/:code/story', async (req, res) => {
 
     session.recentRecipeHashes = [
       ...(session.recentRecipeHashes || []),
-      generated.recipe.hash,
+      generatedBase.recipe.hash,
     ].slice(-200);
 
+    // Map the existing story settings to the library's available settings.
+    // Unmapped settings intentionally retain the TV's existing fallback.
+    const settingMap = {
+      moon_garden: 'garden',
+      coral_reef: 'ocean',
+    };
+
+    const sceneViews = [
+      'arrive',
+      'path',
+      'challenge',
+      'challenge',
+      'path',
+      'challenge',
+      'goal',
+      'celebrate',
+    ];
+
+    const sceneMoods = [
+      'curious',
+      'curious',
+      'exploration',
+      'tense',
+      'exploration',
+      'hopeful',
+      'hopeful',
+      'joyful',
+    ];
+
+    const storyForMatching = {
+      ...generatedBase,
+      scenes: generatedBase.scenes.map((scene, index) => ({
+        ...scene,
+        librarySetting: settingMap[generatedBase.recipe.setting] || null,
+        view: sceneViews[index] || scene.view,
+        mood: sceneMoods[index] || 'curious',
+      })),
+    };
+
+    const generated = matchStoryBackgrounds(storyForMatching);
+    console.log(
+  '[backgrounds]',
+  generated.scenes.map(scene => ({
+    number: scene.number,
+    setting: scene.librarySetting,
+    backgroundUrl: scene.backgroundUrl || null,
+  }))
+);
     const scenes = await Promise.all(
       generated.scenes.map(async (scene) => {
         let audioUrl = null;

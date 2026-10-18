@@ -22,7 +22,7 @@ import {
 // Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
 // Change this one line if the address printed there is different.
 // NOTE: a Cloudflare quick-tunnel address changes every time the tunnel restarts.
-const API_BASE = 'https://gently-delivering-viewers-annotated.trycloudflare.com';
+const API_BASE = 'https://prototype-electoral-ties-higher.trycloudflare.com';
 
 // To test the player on its own, paste any https .mp3 link here
 // (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
@@ -145,6 +145,9 @@ type StoryScene = {
   narration: string;
   visualPrompt: string;
   audioUrl?: string | null;
+  backgroundId?: string;
+  backgroundUrl?: string | null;
+  floorY?: number;
 };
 
 type Story = {
@@ -803,8 +806,9 @@ export const App = () => {
   const maxHeroW = stage.w * 0.6;
   const heroW = Math.min(stage.h * plan.h * heroAspect, maxHeroW);
   const heroH = heroW / heroAspect;
+  const sceneFloorY = currentScene?.floorY ?? plan.y;
   const heroLeft = plan.x * stage.w - heroW / 2;
-  const heroTop = plan.y * stage.h - heroH;
+  const heroTop = sceneFloorY * stage.h - heroH;
 
   const heroTransform = (): any[] => {
     switch (plan.motion) {
@@ -885,8 +889,10 @@ export const App = () => {
   };
 
   const heroSource = characterUri ? {uri: characterUri} : FALLBACK_HERO;
-  const artList = SCENE_ART[story?.genre ?? selectedGenre] ?? DEFAULT_ART;
-  const artSource = artList[Math.min(sceneIndex, artList.length - 1)];
+
+const backgroundSource = currentScene?.backgroundUrl
+  ? {uri: `${API_BASE}${currentScene.backgroundUrl}`}
+  : null;
 
   // =========================================================================
   // STORY SCREEN: full-screen stage
@@ -903,15 +909,17 @@ export const App = () => {
             })
           }>
           {/* Background: full stage, keep aspect ratio (no stretch zoom) */}
-          <Image
-  source={artSource}
-  resizeMode="contain"
-  style={{
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  }}
-/>
+   {backgroundSource && (
+  <Image
+    source={backgroundSource}
+    resizeMode="contain"
+    style={{
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+    }}
+  />
+)}
 
           {/* Twinkling sparkles */}
           {SPARKS.map((spark, i) => (
@@ -925,7 +933,7 @@ export const App = () => {
               {
                 width: heroW * 0.55,
                 left: plan.x * stage.w - (heroW * 0.55) / 2,
-                top: plan.y * stage.h - 8,
+                top: sceneFloorY * stage.h - 8,
                 opacity:
                   plan.motion === 'hop' || plan.motion === 'celebrate'
                     ? beat.interpolate({
@@ -991,7 +999,7 @@ export const App = () => {
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                top: plan.y * stage.h,
+                top: sceneFloorY * stage.h,
                 height: 2,
                 backgroundColor: 'lime',
                 opacity: 0.85,
