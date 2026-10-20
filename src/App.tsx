@@ -22,7 +22,7 @@ import {
 // Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
 // Change this one line if the address printed there is different.
 // NOTE: a Cloudflare quick-tunnel address changes every time the tunnel restarts.
-const API_BASE = 'https://integration-movies-advertiser-sister.trycloudflare.com';
+const API_BASE = 'https://appendix-mega-station-tell.trycloudflare.com';
 
 // To test the player on its own, paste any https .mp3 link here
 // (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
@@ -652,13 +652,17 @@ export const App = () => {
             setIsStoryPaused(previous => !previous);
             break;
           case 'swipe_left':
-          case 'thumbs_up':
             setIsStoryPaused(false);
             goNext();
             break;
           case 'swipe_right':
             setIsStoryPaused(false);
             goPrev();
+            break;
+          case 'thumbs_up':
+            setIsStoryPaused(false);
+            setSceneIndex(0);
+            setScreen('story');
             break;
           default:
             break;
