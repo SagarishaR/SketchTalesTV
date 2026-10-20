@@ -1,4 +1,3 @@
-
 const {narrate} = require('./narrate');
 const {generateRecipeStory} = require('./recipeStory');
 const {matchStoryBackgrounds} = require('./backgroundMatcher');
@@ -42,6 +41,18 @@ const upload = multer({
 });
 
 const sessions = new Map();
+
+// Story worlds that have pictures in the background library. The story generator only
+// uses these, so every story has matching backgrounds. Add a world here when its pictures exist.
+const LIBRARY_STORY_SETTINGS = [
+  'moon_garden',
+  'coral_reef',
+  'dinosaur_valley',
+  'enchanted_forest',
+  'winter_village',
+  'space_station',
+  'toy_city',
+];
 
 function generateCode() {
   return String(crypto.randomInt(100000, 1000000));
@@ -314,7 +325,7 @@ app.post('/api/pairing/:code/story', async (req, res) => {
     typeof req.body?.characterName === 'string' &&
     req.body.characterName.trim()
       ? req.body.characterName.trim().slice(0, 60)
-      : 'little hero';
+      : 'Little Hero';
 
   const allowedGenres = ['magical', 'funny', 'space', 'animals'];
 
@@ -334,6 +345,8 @@ app.post('/api/pairing/:code/story', async (req, res) => {
     const generatedBase = generateRecipeStory({
       genre,
       characterName,
+      allowedSettings: LIBRARY_STORY_SETTINGS,
+      avoidSettings: session.lastSetting ? [session.lastSetting] : [],
       seed: session.code,
       exclude: [...new Set([
         ...(session.recentRecipeHashes || []),
@@ -346,19 +359,30 @@ app.post('/api/pairing/:code/story', async (req, res) => {
       generatedBase.recipe.hash,
     ].slice(-200);
 
+    // Remember the world so the next story uses a different one.
+    session.lastSetting = generatedBase.recipe.setting;
+    console.log(`[story] world=${generatedBase.recipe.setting} quest=${generatedBase.recipe.quest} friend=${generatedBase.recipe.friend}`);
+
     // Map the existing story settings to the library's available settings.
     // Unmapped settings intentionally retain the TV's existing fallback.
     const settingMap = {
       moon_garden: 'garden',
       coral_reef: 'ocean',
+      dinosaur_valley: 'dinosaur_valley',
+      enchanted_forest: 'enchanted_forest',
+      winter_village: 'winter_village',
+      space_station: 'space_station',
+      toy_city: 'toy_city',
     };
 
+    // One library picture per scene when a world has 2 arrive, 2 path, 2 challenge,
+    // 1 goal and 1 celebrate picture (8 scenes, 8 pictures, no repeats).
     const sceneViews = [
       'arrive',
+      'arrive',
+      'path',
       'path',
       'challenge',
-      'challenge',
-      'path',
       'challenge',
       'goal',
       'celebrate',
@@ -368,9 +392,9 @@ app.post('/api/pairing/:code/story', async (req, res) => {
       'curious',
       'curious',
       'exploration',
-      'tense',
       'exploration',
-      'hopeful',
+      'tense',
+      'tense',
       'hopeful',
       'joyful',
     ];

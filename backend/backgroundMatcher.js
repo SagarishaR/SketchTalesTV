@@ -1,4 +1,3 @@
-
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -8,6 +7,8 @@ const LIBRARY_DIR = path.join(PUBLIC_DIR, 'scenes', 'library');
 const INDEX_PATH = path.join(LIBRARY_DIR, 'index.json');
 
 let warnedAboutLibrary = false;
+const warnedFiles = new Set();        // missing picture files, each reported once
+const warnedSettings = new Set();     // worlds with no pictures, each reported once
 
 function loadLibrary() {
   try {
@@ -40,7 +41,13 @@ function loadLibrary() {
         // Only allow image files located inside the background library.
         if (!absolutePath.startsWith(libraryRoot)) return null;
         if (!/\.(png|jpe?g|webp)$/i.test(absolutePath)) return null;
-        if (!fs.existsSync(absolutePath)) return null;
+        if (!fs.existsSync(absolutePath)) {
+          if (!warnedFiles.has(absolutePath)) {
+            console.warn('[backgroundMatcher] index.json lists a missing file:', relativePath);
+            warnedFiles.add(absolutePath);
+          }
+          return null;
+        }
 
         return {
           ...entry,
@@ -94,6 +101,7 @@ function matchBackground(scene, options = {}) {
   if (!setting) return null;
 
   const usedIds = options.usedIds || new Set();
+  const salt = options.salt || '';   // changes from story to story, so close picks vary
 
   const candidates = loadLibrary().filter((image) => {
     const imageSetting = image.setting || image.environment;
@@ -101,11 +109,11 @@ function matchBackground(scene, options = {}) {
   });
 
   if (candidates.length === 0) {
-    if (!warnedAboutLibrary) {
+    if (!warnedSettings.has(setting)) {
       console.warn(
         `[backgroundMatcher] No images found for setting "${setting}".`
       );
-      warnedAboutLibrary = true;
+      warnedSettings.add(setting);
     }
     return null;
   }
@@ -120,8 +128,8 @@ function matchBackground(scene, options = {}) {
   const bestCandidates = scored
     .filter((item) => item.score >= highestScore - 1)
     .sort((a, b) => {
-      const hashA = stableHash(`${scene.title || ''}:${a.image.id}`);
-      const hashB = stableHash(`${scene.title || ''}:${b.image.id}`);
+      const hashA = stableHash(`${salt}:${scene.number || scene.title || ''}:${a.image.id}`);
+      const hashB = stableHash(`${salt}:${scene.number || scene.title || ''}:${b.image.id}`);
       return hashA.localeCompare(hashB);
     });
 
@@ -139,9 +147,10 @@ function matchStoryBackgrounds(story) {
   if (!story || !Array.isArray(story.scenes)) return story;
 
   const usedIds = new Set();
+  const salt = (story.recipe && story.recipe.hash) || story.seed || '';
 
   const scenes = story.scenes.map((scene) => {
-    const match = matchBackground(scene, { usedIds });
+    const match = matchBackground(scene, { usedIds, salt });
 
     if (!match) return scene;
 

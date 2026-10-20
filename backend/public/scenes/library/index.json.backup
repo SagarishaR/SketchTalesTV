@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "garden-arrive",
+      "file": "garden/garden-arrive.png",
+      "setting": "garden",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": ["garden gate", "open path", "flowers"],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-arrive-2",
+      "file": "garden/garden-arrive-2.png",
+      "setting": "garden",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": ["valley path", "river", "hills"],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-path",
+      "file": "garden/garden-path.png",
+      "setting": "garden",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": ["winding path", "tree", "rocks"],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-path-2",
+      "file": "garden/garden-path-2.png",
+      "setting": "garden",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": ["wooden bridge", "stream", "winding path"],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-challenge",
+      "file": "garden/garden-challenge.png",
+      "setting": "garden",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": ["stepping stones", "stream", "riverbank"],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-challenge-2",
+      "file": "garden/garden-challenge-2.png",
+      "setting": "garden",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": ["fallen log", "gorge", "crossing"],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-goal",
+      "file": "garden/garden-goal.png",
+      "setting": "garden",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": ["raised plateau", "large tree", "steps"],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-celebrate",
+      "file": "garden/garden-celebrate.png",
+      "setting": "garden",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": ["pond", "waterfall", "gazebo"],
+      "floorY": 0.78
+    }
+    ,
+{
+  "id": "ocean-arrival",
+  "file": "ocean/ocean-arrival.png",
+  "setting": "ocean",
+  "view": "arrive",
+  "mood": "curious",
+  "landmarks": ["reef entrance", "sandy seabed", "sunbeams"],
+  "floorY": 0.78
+},
+{
+  "id": "ocean-reef-path",
+  "file": "ocean/ocean-reef-path.png",
+  "setting": "ocean",
+  "view": "path",
+  "mood": "exploration",
+  "landmarks": ["coral path", "reef", "sea plants"],
+  "floorY": 0.78
+},
+{
+  "id": "ocean-kelp-forest",
+  "file": "ocean/ocean-kelp-forest.png",
+  "setting": "ocean",
+  "view": "path",
+  "mood": "curious",
+  "landmarks": ["kelp forest", "seaweed", "sandy trail"],
+  "floorY": 0.78
+},
+{
+  "id": "ocean-coral-bridge",
+  "file": "ocean/ocean-coral-bridge.png",
+  "setting": "ocean",
+  "view": "challenge",
+  "mood": "exploration",
+  "landmarks": ["coral bridge", "rock arch", "reef"],
+  "floorY": 0.78
+},
+{
+  "id": "ocean-crystal-cave",
+  "file": "ocean/ocean-crystal-cave.png",
+  "setting": "ocean",
+  "view": "challenge",
+  "mood": "tense",
+  "landmarks": ["underwater cave", "glowing crystals", "rock arch"],
+  "floorY": 0.78
+},
+{
+  "id": "ocean-underwater-kingdom",
+  "file": "ocean/ocean-underwater-kingdom.png",
+  "setting": "ocean",
+  "view": "goal",
+  "mood": "hopeful",
+  "landmarks": ["reef terraces", "underwater arches", "distant kingdom"],
+  "floorY": 0.78
+},
+{
+  "id": "ocean-treasure-discovery",
+  "file": "ocean/ocean-treasure-discovery.png",
+  "setting": "ocean",
+  "view": "goal",
+  "mood": "hopeful",
+  "landmarks": ["treasure chest", "coins", "underwater cave"],
+  "floorY": 0.78
+},
+{
+  "id": "ocean-peaceful-reef",
+  "file": "ocean/ocean-peaceful-reef.png",
+  "setting": "ocean",
+  "view": "celebrate",
+  "mood": "joyful",
+  "landmarks": ["sunlit reef", "colorful coral", "open seabed"],
+  "floorY": 0.78
+}
+  ]
+}

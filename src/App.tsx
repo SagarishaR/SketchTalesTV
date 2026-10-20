@@ -22,7 +22,7 @@ import {
 // Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
 // Change this one line if the address printed there is different.
 // NOTE: a Cloudflare quick-tunnel address changes every time the tunnel restarts.
-const API_BASE = 'https://prototype-electoral-ties-higher.trycloudflare.com';
+const API_BASE = 'https://integration-movies-advertiser-sister.trycloudflare.com';
 
 // To test the player on its own, paste any https .mp3 link here
 // (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
@@ -1697,16 +1697,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: SAFE,
     right: SAFE,
-    bottom: SAFE - 12,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 18,
+    bottom: SAFE,
+    paddingHorizontal: 20,
+    paddingVertical: 7,
+    borderRadius: 12,
     backgroundColor: '#100E20CC',
   },
   captionText: {
     color: '#FFFFFF',
-    fontSize: 22,
-    lineHeight: 31,
+    fontSize: 18,
+    lineHeight: 23,
     textAlign: 'center',
   },
 
