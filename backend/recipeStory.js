@@ -1,9 +1,13 @@
+
 'use strict';
 
 const crypto = require('crypto');
 
 const PARTS = {
   settings: [
+    { id: 'icecream_valley', name: 'Ice Cream Valley', place: 'a magical valley of ice cream, candy bridges, and chocolate rivers' },
+    { id: 'fairy_village', name: 'Fairy Village', place: 'an enchanted village of mushroom cottages, glowing flowers, and tiny fairy doors' },
+    { id: 'amusement_park', name: 'Fantasy Amusement Park', place: 'a magical amusement park filled with enchanted rides and colorful carnival streets' },
     { id: 'moon_garden', name: 'Storybook Garden', place: 'a sunny storybook garden' },
     { id: 'cloud_kingdom', name: 'Cloud Kingdom', place: 'a kingdom floating among soft clouds' },
     { id: 'coral_reef', name: 'Coral Reef', place: 'a colorful underwater coral reef' },
@@ -13,7 +17,8 @@ const PARTS = {
     { id: 'toy_city', name: 'Toy City', place: 'a cheerful city made of giant toys' },
     { id: 'winter_village', name: 'Winter Village', place: 'a cozy village covered in sparkling snow' },
   ],
-    quests: [
+
+  quests: [
     { id: 'lost_lantern', name: 'Find the Lost Lantern', title: 'the Lost Lantern', goal: 'find a lantern that lights the way home' },
     { id: 'rainbow_map', name: 'Follow the Rainbow Map', title: 'The Rainbow Map', goal: 'follow a rainbow map to a hidden treasure' },
     { id: 'missing_song', name: 'Recover the Missing Song', title: 'The Missing Song', goal: 'help a little bird recover its missing song' },
@@ -23,6 +28,7 @@ const PARTS = {
     { id: 'runaway_cloud', name: 'Guide the Runaway Cloud', title: 'The Runaway Cloud', goal: 'guide a runaway cloud back to its friends' },
     { id: 'crystal_bell', name: 'Ring the Crystal Bell', title: 'The Crystal Bell', goal: 'find a crystal bell that can awaken the valley' },
   ],
+
   friends: [
     { id: 'owl', name: 'Ollie the Owl', description: 'Ollie the thoughtful little owl' },
     { id: 'fox', name: 'Pip the Fox', description: 'Pip the cheerful fox with a fluffy tail' },
@@ -33,12 +39,14 @@ const PARTS = {
     { id: 'whale', name: 'Wally the Whale', description: 'Wally the friendly whale with a musical voice' },
     { id: 'firefly', name: 'Flick the Firefly', description: 'Flick the little firefly who glows in the dark' },
   ],
+
   obstacles: [
     { id: 'rainy_path', name: 'Rainy Path', problem: 'a sudden rainstorm makes the path slippery' },
     { id: 'mixed_signs', name: 'Mixed-Up Signs', problem: 'the direction signs have become mixed up' },
     { id: 'sleepy_bridge', name: 'Sleepy Bridge', problem: 'a sleepy bridge will not wake up to let anyone cross' },
     { id: 'gentle_wind', name: 'Gentle Wind', problem: 'a playful wind scatters the clues everywhere' },
   ],
+
   endings: [
     { id: 'garden_party', name: 'A Garden Party', resolution: 'everyone celebrates with a joyful picnic' },
     { id: 'wish_shared', name: 'A Shared Wish', resolution: 'the friends make a kind wish together' },
@@ -50,19 +58,40 @@ const PARTS = {
 const GENRES = new Set(['magical', 'funny', 'space', 'animals']);
 
 // Keep stories believable: some friends and problems only make sense in some worlds.
-const FRIEND_ONLY_IN = { whale: ['coral_reef'] };                       // a whale lives in the sea
-const FRIEND_NOT_IN = { owl: ['coral_reef'], fox: ['coral_reef'], rabbit: ['coral_reef'] };
-const OBSTACLE_NOT_IN = { rainy_path: ['coral_reef'], gentle_wind: ['coral_reef'] };  // no rain or wind underwater
+const FRIEND_ONLY_IN = {
+  whale: ['coral_reef'],
+};
+
+const FRIEND_NOT_IN = {
+  owl: ['coral_reef'],
+  fox: ['coral_reef'],
+  rabbit: ['coral_reef'],
+};
+
+const OBSTACLE_NOT_IN = {
+  rainy_path: ['coral_reef'],
+  gentle_wind: ['coral_reef'],
+};
 
 function friendFits(friend, settingId) {
-  if (FRIEND_ONLY_IN[friend.id] && !FRIEND_ONLY_IN[friend.id].includes(settingId)) return false;
-  if ((FRIEND_NOT_IN[friend.id] || []).includes(settingId)) return false;
+  if (
+    FRIEND_ONLY_IN[friend.id] &&
+    !FRIEND_ONLY_IN[friend.id].includes(settingId)
+  ) {
+    return false;
+  }
+
+  if ((FRIEND_NOT_IN[friend.id] || []).includes(settingId)) {
+    return false;
+  }
+
   return true;
 }
 
 function obstacleFits(obstacle, settingId) {
   return !(OBSTACLE_NOT_IN[obstacle.id] || []).includes(settingId);
 }
+
 const QUEST_SETTINGS = {
   lost_lantern: [
     'moon_garden',
@@ -70,52 +99,84 @@ const QUEST_SETTINGS = {
     'winter_village',
     'cloud_kingdom',
     'coral_reef',
+    'icecream_valley',
+    'fairy_village',
+    'amusement_park',
   ],
-    rainbow_map: [
+
+  rainbow_map: [
     'enchanted_forest',
     'dinosaur_valley',
     'toy_city',
     'moon_garden',
     'coral_reef',
+    'icecream_valley',
+    'fairy_village',
+    'amusement_park',
   ],
+
   missing_song: [
     'enchanted_forest',
     'cloud_kingdom',
     'dinosaur_valley',
     'winter_village',
+    'icecream_valley',
+    'fairy_village',
+    'amusement_park',
   ],
+
   star_seed: [
     'moon_garden',
     'enchanted_forest',
     'cloud_kingdom',
     'space_station',
+    'icecream_valley',
+    'fairy_village',
+    'amusement_park',
   ],
+
   golden_key: [
     'toy_city',
     'winter_village',
     'enchanted_forest',
     'cloud_kingdom',
     'coral_reef',
+    'icecream_valley',
+    'fairy_village',
+    'amusement_park',
   ],
+
   festival_flower: [
     'moon_garden',
     'enchanted_forest',
     'dinosaur_valley',
     'winter_village',
+    'icecream_valley',
+    'fairy_village',
+    'amusement_park',
   ],
+
   runaway_cloud: [
     'cloud_kingdom',
     'space_station',
     'moon_garden',
+    'icecream_valley',
+    'fairy_village',
+    'amusement_park',
   ],
+
   crystal_bell: [
     'enchanted_forest',
     'dinosaur_valley',
     'moon_garden',
     'cloud_kingdom',
     'coral_reef',
+    'icecream_valley',
+    'fairy_village',
+    'amusement_park',
   ],
 };
+
 const QUEST_STORIES = {
   lost_lantern: {
     clue1: 'three tiny golden specks on a broad leaf',
@@ -128,6 +189,7 @@ const QUEST_STORIES = {
     finish: 'They lifted the lantern carefully. Its warm light made the familiar homeward path shine again.',
     lesson: 'careful observation and choosing a safe path',
   },
+
   rainbow_map: {
     clue1: 'a painted blue curve ending beside a three-pointed stone',
     clue2: 'three colored pebbles arranged in the same order as the map',
@@ -139,6 +201,7 @@ const QUEST_STORIES = {
     finish: 'Inside the box they found bright buttons and a note inviting them to share their discovery.',
     lesson: 'patience, pattern-finding, and checking evidence',
   },
+
   missing_song: {
     clue1: 'a feather beside a branch that hummed softly in the breeze',
     clue2: 'a familiar three-note rhythm tapped by a tiny woodpecker',
@@ -150,6 +213,7 @@ const QUEST_STORIES = {
     finish: 'The bird sang one note, then another, until its cheerful tune filled the place.',
     lesson: 'kindness, patience, and helping others feel safe',
   },
+
   star_seed: {
     clue1: 'a silver sparkle caught in the folds of a fallen petal',
     clue2: 'a patch of soft soil that stayed warm but was sheltered from strong wind',
@@ -161,6 +225,7 @@ const QUEST_STORIES = {
     finish: 'Before moonrise, the seed glimmered like a tiny star and sent one hopeful green shoot above the soil.',
     lesson: 'patience, care, and giving living things what they need',
   },
+
   golden_key: {
     clue1: 'a narrow scratch in the dust shaped like the curve of a key',
     clue2: 'a tiny golden glint beside a door with the same curved lock',
@@ -172,6 +237,7 @@ const QUEST_STORIES = {
     finish: 'The key turned gently, and the door opened onto a sunny room filled with books and friendly surprises.',
     lesson: 'looking carefully and not forcing a problem',
   },
+
   festival_flower: {
     clue1: 'a trail of pale pollen leading away from the crowded festival path',
     clue2: 'a sheltered nook with damp soil and sunlight falling through the leaves',
@@ -183,6 +249,7 @@ const QUEST_STORIES = {
     finish: 'They carried the flower in its small pot to the festival and placed it where everyone could admire it.',
     lesson: 'protecting nature and being thoughtful when time is short',
   },
+
   runaway_cloud: {
     clue1: 'a line of tiny droplets drifting toward the high ridge',
     clue2: 'a soft echo of the cloud’s friends calling from beyond the ridge',
@@ -194,6 +261,7 @@ const QUEST_STORIES = {
     finish: 'The runaway cloud joined its family and made a little patch of shade for tired travelers.',
     lesson: 'listening, teamwork, and guiding rather than forcing',
   },
+
   crystal_bell: {
     clue1: 'a faint ring whenever the breeze passed a cluster of crystal leaves',
     clue2: 'a trail of sparkling dust leading toward a stone ledge shaped like a small arch',
@@ -202,13 +270,12 @@ const QUEST_STORIES = {
     choice: 'They could bang on every object, or follow the sound and handle the crystals gently.',
     action: 'They followed the sparkling trail to the arch-shaped ledge and checked behind it carefully.',
     solution: 'the crystal bell was resting behind the arch-shaped ledge beside the crystal leaves',
-    finish: 'One gentle ring spread a lovely note across the valley, and its sleepy flowers slowly opened.',
+    finish: 'One gentle ring spread a lovely note across the place, and its sleepy flowers slowly opened.',
     lesson: 'gentleness, careful listening, and curiosity',
   },
 };
 
-// Underwater wording. Where a world needs different clues, these replace the land versions
-// (leaves, soil, hollow trees, breeze) so the story matches the pictures.
+// Underwater wording. These overrides avoid land-specific clues in the coral reef.
 const SETTING_QUEST_OVERRIDES = {
   coral_reef: {
     lost_lantern: {
@@ -222,6 +289,7 @@ const SETTING_QUEST_OVERRIDES = {
       finish: 'They lifted the lantern carefully. Its warm light made the way home across the reef shine again.',
       lesson: 'careful observation and choosing a gentle path',
     },
+
     rainbow_map: {
       clue1: 'a painted blue wave ending beside a three-pointed rock',
       clue2: 'three coloured shells arranged in the same order as the map',
@@ -233,6 +301,7 @@ const SETTING_QUEST_OVERRIDES = {
       finish: 'Inside the box they found bright shells and a note inviting them to share their discovery.',
       lesson: 'patience, pattern-finding, and checking evidence',
     },
+
     golden_key: {
       clue1: 'a narrow curve scratched in the sand, shaped like the bend of a key',
       clue2: 'a tiny golden glint beside a round stone door with the same curved lock',
@@ -244,6 +313,7 @@ const SETTING_QUEST_OVERRIDES = {
       finish: 'The key turned gently, and the door opened onto a glowing room filled with shells and friendly surprises.',
       lesson: 'looking carefully and not forcing a problem',
     },
+
     crystal_bell: {
       clue1: 'a faint ring whenever the current passed a cluster of crystal coral',
       clue2: 'a trail of sparkling bubbles leading toward a ledge shaped like a small arch',
@@ -264,11 +334,14 @@ function hash(value) {
 
 function makeRandom(seed) {
   let state = parseInt(hash(String(seed)).slice(0, 8), 16) >>> 0;
+
   return function random() {
     state = (state + 0x6D2B79F5) >>> 0;
+
     let t = state;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
@@ -277,9 +350,9 @@ function pick(list, random) {
   return list[Math.floor(random() * list.length)];
 }
 
-
 function selectRecipe(seed, exclude = [], allowedSettings = null, avoidSettings = []) {
   const excluded = new Set(exclude);
+
   const allowed = Array.isArray(allowedSettings) && allowedSettings.length > 0
     ? new Set(allowedSettings)
     : null;
@@ -291,34 +364,55 @@ function selectRecipe(seed, exclude = [], allowedSettings = null, avoidSettings 
     let setting;
 
     if (allowed) {
-      // World first: every allowed world with at least one quest appears about equally often.
+      // Select a world first so allowed worlds receive a fair chance.
       const worlds = PARTS.settings.filter(
-        candidate => allowed.has(candidate.id)
-          && PARTS.quests.some(q => (QUEST_SETTINGS[q.id] || []).includes(candidate.id)),
+        candidate =>
+          allowed.has(candidate.id) &&
+          PARTS.quests.some(q =>
+            (QUEST_SETTINGS[q.id] || []).includes(candidate.id),
+          ),
       );
+
       if (worlds.length === 0) {
         throw new Error('No quests are available for the allowed settings');
       }
-      // Prefer a world other than the one(s) just used, so back-to-back stories change world.
+
+      // Prefer a different world from the previous story.
       const avoid = new Set(avoidSettings || []);
       const fresh = worlds.filter(candidate => !avoid.has(candidate.id));
+
       setting = pick(fresh.length > 0 ? fresh : worlds, random);
+
       quest = pick(
-        PARTS.quests.filter(q => (QUEST_SETTINGS[q.id] || []).includes(setting.id)),
+        PARTS.quests.filter(q =>
+          (QUEST_SETTINGS[q.id] || []).includes(setting.id),
+        ),
         random,
       );
     } else {
       quest = pick(PARTS.quests, random);
-      const compatibleSettings = PARTS.settings.filter(
-        candidate => QUEST_SETTINGS[quest.id]?.includes(candidate.id),
+
+      const compatibleSettings = PARTS.settings.filter(candidate =>
+        QUEST_SETTINGS[quest.id]?.includes(candidate.id),
       );
+
       if (compatibleSettings.length === 0) {
         throw new Error(`No compatible settings for quest: ${quest.id}`);
       }
+
       setting = pick(compatibleSettings, random);
     }
-    const friend = pick(PARTS.friends.filter(f => friendFits(f, setting.id)), random);
-    const obstacle = pick(PARTS.obstacles.filter(o => obstacleFits(o, setting.id)), random);
+
+    const friend = pick(
+      PARTS.friends.filter(f => friendFits(f, setting.id)),
+      random,
+    );
+
+    const obstacle = pick(
+      PARTS.obstacles.filter(o => obstacleFits(o, setting.id)),
+      random,
+    );
+
     const ending = pick(PARTS.endings, random);
 
     const recipe = { setting, quest, friend, obstacle, ending };
@@ -339,12 +433,12 @@ function selectRecipe(seed, exclude = [], allowedSettings = null, avoidSettings 
   throw new Error('Could not find a non-excluded recipe after 5000 attempts');
 }
 
-
 function cleanCharacterName(value) {
   const name = String(value ?? 'Little Hero')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 40);
+
   return name || 'Little Hero';
 }
 
@@ -352,12 +446,15 @@ function genreFlavor(genre) {
   if (genre === 'funny') {
     return 'A few silly surprises made the adventure cheerful, but careful thinking mattered more than luck.';
   }
+
   if (genre === 'space') {
     return 'Tiny stars glittered overhead, and the friends used the lights and landmarks to guide their search.';
   }
+
   if (genre === 'animals') {
     return 'Small animal neighbors shared the place, and the friends took care not to disturb them.';
   }
+
   return 'A gentle shimmer of magic brightened the path, but careful observation mattered more than magic alone.';
 }
 
@@ -365,77 +462,141 @@ function obstacleResolution(id) {
   if (id === 'rainy_path') {
     return 'They waited for the heaviest drops to pass, then crossed the wet ground slowly and helped one another stay steady.';
   }
+
   if (id === 'mixed_signs') {
     return 'They stopped trusting the confusing signs and checked the landmarks against the clues they had collected.';
   }
+
   if (id === 'sleepy_bridge') {
     return 'They greeted the bridge politely and crossed one at a time after it lowered safely.';
   }
+
   return 'They held their notes under a smooth stone and gathered the scattered clues before continuing.';
 }
 
 function createScenes(recipe, hero, genre) {
   const plot = {
     ...QUEST_STORIES[recipe.quest.id],
-    ...((SETTING_QUEST_OVERRIDES[recipe.setting.id] || {})[recipe.quest.id] || {}),
+    ...((SETTING_QUEST_OVERRIDES[recipe.setting.id] || {})[
+      recipe.quest.id
+    ] || {}),
   };
 
   const place = recipe.setting.place;
-  const flavor = genreFlavor(genre);
+  const solution = plot.solution || recipe.quest.goal;
+  const finish = plot.finish || recipe.ending.resolution;
+  const lesson = plot.lesson || 'being patient and trying again';
 
+  const settingMap = {
+    moon_garden: 'garden',
+    coral_reef: 'ocean',
+    dinosaur_valley: 'dinosaur_valley',
+    enchanted_forest: 'enchanted_forest',
+    winter_village: 'winter_village',
+    space_station: 'space_station',
+    toy_city: 'toy_city',
+    cloud_kingdom: 'cloud_kingdom',
+    icecream_valley: 'icecream_valley',
+    fairy_village: 'fairy_village',
+    amusement_park: 'amusement_park',
+  };
+
+  // Eight connected scenes: mission, clues, mistake, decision, solution, and ending.
   const beats = [
     {
-      title: 'A Wonderful Beginning',
-      narration: `${hero} arrived in ${place}. ${flavor} A little mystery was waiting to be solved.`,
-      view: 'wide establishing shot',
+      title: 'A New Adventure',
+      view: 'arrive',
+      mood: 'curious',
+      narration: `${hero} was exploring ${place}. Then ${hero} heard about a problem: ${recipe.quest.goal}. "I can help!" said ${hero}.`,
+      composition: 'A wide view of the world as the hero arrives.',
     },
+
     {
       title: 'The Mission',
-      narration: `${hero} had a mission: ${recipe.quest.goal}. "I can try!" said ${hero}.`,
-      view: 'hero exploring the setting',
+      view: 'arrive',
+      mood: 'curious',
+      narration: `${hero} wanted to solve the problem. The first step was to look for a clue.`,
+      composition: 'The hero prepares to begin the search.',
     },
+
     {
       title: 'The First Clue',
-      narration: `${hero} found ${plot.clue1}. "Could this be a clue?" wondered ${hero}.`,
-      view: 'close-up clue',
+      view: 'path',
+      mood: 'exploration',
+      narration: `${hero} looked around and found ${plot.clue1}. "This may help us," said ${hero}.`,
+      composition: 'The hero notices the first clue.',
     },
+
     {
-      title: 'Try Again',
-      narration: `${hero} tried the first idea. ${plot.wrong} It did not work. "I will try again!" said ${hero}.`,
-      view: 'hero trying an idea',
+      title: 'A Wrong Turn',
+      view: 'path',
+      mood: 'exploration',
+      narration: `${hero} followed the first idea. ${plot.wrong} The clue did not lead to the answer, so ${hero} tried again.`,
+      composition: 'The hero discovers that the first guess was wrong.',
     },
+
     {
-      title: 'A Careful Step',
-      narration: `A little problem appeared. ${hero} stopped, took a breath, and looked around. Going slowly was the safe choice.`,
-      view: 'hero making a careful decision',
+      title: 'Think It Through',
+      view: 'challenge',
+      mood: 'tense',
+      narration: `${hero} stopped and thought. ${plot.insight || 'The clues helped the hero think of a better plan.'} ${plot.choice || 'The hero chose to look carefully and stay safe.'} ${hero} decided to follow the clues instead of guessing.`,
+      composition: 'The hero studies the clues and chooses a better plan.',
     },
+
     {
-      title: 'Another Clue',
-      narration: `${hero} found ${plot.clue2}. "Now I have another clue!" said ${hero}. The mystery was starting to make sense.`,
-      view: 'hero discovering a clue',
+      title: 'The Last Clue',
+      view: 'path',
+      mood: 'exploration',
+      narration: `${hero} followed the clues and found ${plot.clue2}. "Now I know where to look!" said ${hero}.`,
+      composition: 'The hero discovers the second clue near a landmark.',
     },
+
     {
-      title: 'The Discovery',
-      narration: `${hero} followed the clues. At last, ${plot.solution}. "I found it!" said ${hero}.`,
-      view: 'hero making the final discovery',
+      title: 'The Answer',
+      view: 'goal',
+      mood: 'hopeful',
+      narration: `${plot.action || `${hero} looked carefully in the right place.`} At last, ${solution}. "We did it!" said ${hero}.`,
+      composition: 'The hero finds the object or solves the problem.',
     },
+
     {
       title: 'A Happy Ending',
-      narration: `The adventure ended happily. ${hero} smiled and felt proud. ${hero} learned that being patient and trying again can help. The end.`,
-      view: 'hero celebrating',
+      view: 'celebrate',
+      mood: 'joyful',
+      narration: `${finish} ${hero} was happy to help. The adventure taught ${hero} the value of ${lesson}. The end.`,
+      composition: 'A warm, happy ending showing the problem is solved.',
     },
   ];
 
   return beats.map((beat, index) => {
-    const narration = beat.narration.replace(/\s+/g, ' ').trim();
+    const narration = beat.narration
+      .replace(/\bThey\b/g, hero)
+      .replace(/\bthey\b/g, hero)
+      .replace(/\s+/g, ' ')
+      .replace(/\s+([.,!?])/g, '$1')
+      .trim();
 
     return {
       number: index + 1,
       title: beat.title,
       narration,
-      visualPrompt: `Create a child-friendly storybook illustration for scene ${index + 1} of 8. Setting: ${place}. Show exactly one character: ${hero}, faithfully based on the child's uploaded drawing. Preserve the original silhouette, proportions, colors, and distinctive features. Do not include friends, people, animals, or other characters. Scene: ${beat.title}. Action: ${narration}. Composition: ${beat.view}. Use clear storytelling, gentle expressions, soft lighting, and cheerful colors. Keep important story objects visible. No text, captions, logos, or watermarks.`,
-      motionPrompt: 'Animate only the child-drawn hero and the environment. Preserve the hero’s original shape, colors, and features. Use gentle movement and slow camera motion. Do not add other characters. No text or subtitles.',
       view: beat.view,
+      mood: beat.mood,
+      librarySetting: settingMap[recipe.setting.id] || recipe.setting.id,
+
+      visualPrompt:
+        `Create a child-friendly storybook illustration for scene ${index + 1} of 8. ` +
+        `Setting: ${place}. Show exactly one main character: ${hero}, faithfully based on the child's uploaded drawing. ` +
+        `Preserve the original silhouette, proportions, colors, and distinctive features. ` +
+        `Do not add any other characters. Scene: ${beat.title}. Action: ${narration}. ` +
+        `Composition: ${beat.composition}. Clearly show the clue or object mentioned. ` +
+        `Keep the world consistent with the setting. Use gentle expressions, soft lighting, and cheerful colors. ` +
+        `No text, captions, logos, or watermarks.`,
+
+      motionPrompt:
+        'Animate only the child-drawn hero and the environment. Preserve the hero’s original shape, colors, and features. ' +
+        'Use gentle movement and slow camera motion. Keep the setting consistent. ' +
+        'Do not add other characters. No text or subtitles.',
     };
   });
 }
@@ -451,9 +612,11 @@ function generateRecipeStory({
   if (seed === undefined || seed === null || String(seed).length === 0) {
     throw new Error('A seed is required');
   }
+
   if (!GENRES.has(genre)) {
     throw new Error('Choose magical, funny, space, or animals');
   }
+
   if (!Array.isArray(exclude)) {
     throw new Error('exclude must be an array');
   }
@@ -465,6 +628,7 @@ function generateRecipeStory({
     title: `${hero} and ${recipe.quest.title}`,
     genre,
     seed: String(seed),
+
     recipe: {
       setting: recipe.setting.id,
       quest: recipe.quest.id,
@@ -473,6 +637,7 @@ function generateRecipeStory({
       ending: recipe.ending.id,
       hash: recipe.hash,
     },
+
     scenes: createScenes(recipe, hero, genre),
   };
 }

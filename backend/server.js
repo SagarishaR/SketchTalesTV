@@ -1,3 +1,4 @@
+
 const {narrate} = require('./narrate');
 const {generateRecipeStory} = require('./recipeStory');
 const {matchStoryBackgrounds} = require('./backgroundMatcher');
@@ -42,8 +43,7 @@ const upload = multer({
 
 const sessions = new Map();
 
-// Story worlds that have pictures in the background library. The story generator only
-// uses these, so every story has matching backgrounds. Add a world here when its pictures exist.
+// Story worlds available in the background library.
 const LIBRARY_STORY_SETTINGS = [
   'moon_garden',
   'coral_reef',
@@ -52,10 +52,26 @@ const LIBRARY_STORY_SETTINGS = [
   'winter_village',
   'space_station',
   'toy_city',
+  'cloud_kingdom',
+  'icecream_valley',
+  'fairy_village',
+  'amusement_park',
 ];
 
 function generateCode() {
   return String(crypto.randomInt(100000, 1000000));
+}
+
+// Randomize world order for each pairing session.
+function shuffleSettings(settings) {
+  const shuffled = [...settings];
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = crypto.randomInt(0, i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
 }
 
 function createSession() {
@@ -74,6 +90,10 @@ function createSession() {
     mood: null,
     story: null,
     recentRecipeHashes: [],
+
+    // Every world appears once before a new cycle begins.
+    worldQueue: shuffleSettings(LIBRARY_STORY_SETTINGS),
+    usedWorlds: [],
   };
 
   sessions.set(code, session);
@@ -163,6 +183,7 @@ app.get('/api/pairing/:code', (req, res) => {
     status: session.status,
     mood: session.mood,
     hasDrawing: Boolean(session.drawing),
+    drawingUploadedAt: session.drawing?.uploadedAt ?? null,
     hasCutout: Boolean(session.processedDrawing),
     hasStory: Boolean(session.story),
   });
@@ -305,7 +326,7 @@ app.post('/api/pairing/:code/mood', (req, res) => {
   });
 });
 
-// Generate a local story and attach matching library backgrounds.
+// Generate a story and attach matching library backgrounds.
 app.post('/api/pairing/:code/story', async (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -338,33 +359,52 @@ app.post('/api/pairing/:code/story', async (req, res) => {
   try {
     const exclude = Array.isArray(req.body?.exclude)
       ? req.body.exclude.filter(
-          (hash) => typeof hash === 'string' && /^[a-f0-9]{40}$/.test(hash)
+          hash => typeof hash === 'string' && /^[a-f0-9]{40}$/.test(hash),
         ).slice(-200)
       : [];
+
+    // Keep the current world at the head of the queue until story generation
+    // succeeds. A failed request therefore does not consume that world.
+    if (!Array.isArray(session.worldQueue) || session.worldQueue.length === 0) {
+      session.worldQueue = shuffleSettings(LIBRARY_STORY_SETTINGS);
+      session.usedWorlds = [];
+    }
+
+    const nextWorld = session.worldQueue[0];
 
     const generatedBase = generateRecipeStory({
       genre,
       characterName,
-      allowedSettings: LIBRARY_STORY_SETTINGS,
-      avoidSettings: session.lastSetting ? [session.lastSetting] : [],
-      seed: session.code,
+      allowedSettings: [nextWorld],
+      avoidSettings: [],
+      seed: `${session.code}:${nextWorld}:${(session.usedWorlds || []).length}`,
       exclude: [...new Set([
         ...(session.recentRecipeHashes || []),
         ...exclude,
       ])],
     });
 
+    // Consume the world only after the story has been generated successfully.
+    session.worldQueue.shift();
+    session.usedWorlds = [
+      ...(session.usedWorlds || []),
+      generatedBase.recipe.setting,
+    ];
+
     session.recentRecipeHashes = [
       ...(session.recentRecipeHashes || []),
       generatedBase.recipe.hash,
     ].slice(-200);
 
-    // Remember the world so the next story uses a different one.
     session.lastSetting = generatedBase.recipe.setting;
-    console.log(`[story] world=${generatedBase.recipe.setting} quest=${generatedBase.recipe.quest} friend=${generatedBase.recipe.friend}`);
 
-    // Map the existing story settings to the library's available settings.
-    // Unmapped settings intentionally retain the TV's existing fallback.
+    console.log(
+      `[story] world=${generatedBase.recipe.setting} ` +
+      `worldsUsed=${session.usedWorlds.length}/${LIBRARY_STORY_SETTINGS.length} ` +
+      `quest=${generatedBase.recipe.quest} friend=${generatedBase.recipe.friend}`,
+    );
+
+    // Map each story setting to its background-library setting.
     const settingMap = {
       moon_garden: 'garden',
       coral_reef: 'ocean',
@@ -373,10 +413,13 @@ app.post('/api/pairing/:code/story', async (req, res) => {
       winter_village: 'winter_village',
       space_station: 'space_station',
       toy_city: 'toy_city',
+      cloud_kingdom: 'cloud_kingdom',
+      icecream_valley: 'icecream_valley',
+      fairy_village: 'fairy_village',
+      amusement_park: 'amusement_park',
     };
 
-    // One library picture per scene when a world has 2 arrive, 2 path, 2 challenge,
-    // 1 goal and 1 celebrate picture (8 scenes, 8 pictures, no repeats).
+    // Eight scenes: two arrive, two path, two challenge, one goal, one celebrate.
     const sceneViews = [
       'arrive',
       'arrive',
@@ -410,16 +453,38 @@ app.post('/api/pairing/:code/story', async (req, res) => {
     };
 
     const generated = matchStoryBackgrounds(storyForMatching);
+
+    // Make narration acknowledge landmarks in the actual selected background.
+    const scenesWithGroundedNarration = generated.scenes.map(scene => {
+      const landmarks = Array.isArray(scene.backgroundLandmarks)
+        ? scene.backgroundLandmarks.filter(
+            item => typeof item === 'string' && item.trim()
+          )
+        : [];
+
+      if (!landmarks.length) return scene;
+
+      const visibleLandmarks = landmarks.slice(0, 3).join(', ');
+      const narration = scene.narration || '';
+      const sentence = `Around ${scene.title === 'A Happy Ending' ? 'the place' : 'the scene'}, ${visibleLandmarks} could be seen.`;
+
+      return {
+        ...scene,
+        narration: `${narration} ${sentence}`.replace(/\\s+/g, ' ').trim(),
+      };
+    });
+
     console.log(
-  '[backgrounds]',
-  generated.scenes.map(scene => ({
-    number: scene.number,
-    setting: scene.librarySetting,
-    backgroundUrl: scene.backgroundUrl || null,
-  }))
-);
+      '[backgrounds]',
+      generated.scenes.map(scene => ({
+        number: scene.number,
+        setting: scene.librarySetting,
+        backgroundUrl: scene.backgroundUrl || null,
+      })),
+    );
+
     const scenes = await Promise.all(
-      generated.scenes.map(async (scene) => {
+      scenesWithGroundedNarration.map(async scene => {
         let audioUrl = null;
 
         try {
@@ -475,11 +540,17 @@ app.post('/api/pairing/:code/gesture', express.json(), (req, res) => {
     });
   }
 
-  const allowedGestures = ['open_palm', 'swipe_left', 'swipe_right', 'thumbs_up'];
-  const { gesture } = req.body || {};
+  const allowedGestures = [
+    'open_palm',
+    'swipe_left',
+    'swipe_right',
+    'thumbs_up',
+  ];
+
+  const {gesture} = req.body || {};
 
   if (!allowedGestures.includes(gesture)) {
-    return res.status(400).json({ error: 'Invalid gesture' });
+    return res.status(400).json({error: 'Invalid gesture'});
   }
 
   session.lastGesture = {
@@ -488,7 +559,7 @@ app.post('/api/pairing/:code/gesture', express.json(), (req, res) => {
   };
 
   console.log(`Gesture received for ${session.code}: ${gesture}`);
-  res.json({ ok: true });
+  res.json({ok: true});
 });
 
 // Let the TV check for a new gesture.
@@ -499,7 +570,7 @@ app.get('/api/pairing/:code/gesture', (req, res) => {
   const gesture = session.lastGesture || null;
   session.lastGesture = null;
 
-  res.json({ gesture });
+  res.json({gesture});
 });
 
 // Return upload and request errors as JSON.
@@ -525,7 +596,7 @@ app.use((error, _req, res, _next) => {
   }
 
   res.status(500).json({
-    error: 'An unexpected server error occurred',
+    error: 'An unexpected error occurred',
   });
 });
 

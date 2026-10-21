@@ -22,7 +22,7 @@ import {
 // Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
 // Change this one line if the address printed there is different.
 // NOTE: a Cloudflare quick-tunnel address changes every time the tunnel restarts.
-const API_BASE = 'https://appendix-mega-station-tell.trycloudflare.com';
+const API_BASE = 'https://assessments-baptist-shell-brochures.trycloudflare.com';
 
 // To test the player on its own, paste any https .mp3 link here
 // (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
@@ -323,6 +323,8 @@ export const App = () => {
   // Width / height of the hero picture, so its box matches its real shape and
   // the feet sit exactly on the floor line (a square box floats wide pictures).
   const [heroAspect, setHeroAspect] = useState(1);
+  // Tracks the latest uploaded drawing so the TV only processes each upload once.
+  const lastDrawingUploadedAt = useRef<number | null>(null);
 
   // Play the locally rendered film on the video surface.
   // Skipped entirely when USE_VIDEO is false, so the in-app stage shows instead.
@@ -443,7 +445,6 @@ export const App = () => {
   // ---- Pairing and drawing polling (unchanged behaviour) -------------------
   useEffect(() => {
     let active = true;
-    let drawingLoaded = false;
     let pollTimer: ReturnType<typeof setInterval> | undefined;
     let isPolling = false;
 
@@ -469,7 +470,7 @@ export const App = () => {
         setStatus('Scan the QR code or enter the code on your phone.');
 
         pollTimer = setInterval(async () => {
-          if (isPolling || !active || drawingLoaded) {
+          if (isPolling || !active) {
             return;
           }
 
@@ -501,8 +502,14 @@ export const App = () => {
               current ? {...current, status: 'paired'} : current,
             );
 
-            if (!latest.hasDrawing) {
-              setStatus('Phone connected! Upload your drawing to continue.');
+            if (
+              !latest.hasDrawing ||
+              !latest.drawingUploadedAt ||
+              latest.drawingUploadedAt === lastDrawingUploadedAt.current
+            ) {
+              if (!latest.hasDrawing) {
+                setStatus('Phone connected! Upload your drawing to continue.');
+              }
               return;
             }
 
@@ -540,8 +547,13 @@ export const App = () => {
               }
             }
 
-            drawingLoaded = true;
-            setScreen('genres');
+            const isFirstDrawing = lastDrawingUploadedAt.current === null;
+            lastDrawingUploadedAt.current = latest.drawingUploadedAt;
+
+            if (isFirstDrawing) {
+              setScreen('genres');
+            }
+
             setStatus('Your drawing is ready. Choose an adventure!');
           } catch {
             if (active) {
@@ -1175,9 +1187,9 @@ const backgroundSource = currentScene?.backgroundUrl
         <View style={styles.mainContent}>
           <View style={styles.genreIntro}>
             <Text style={styles.eyebrow}>YOUR DRAWING IS READY</Text>
-            <Text style={styles.pageTitle}>Choose a story adventure</Text>
+            <Text style={styles.pageTitle}>Start Your Story ✨</Text>
             <Text style={styles.description}>
-              Pick the world you want to explore. Your little hero is waiting!
+              Bring your drawing to life in a magical adventure!
             </Text>
           </View>
 
@@ -1198,30 +1210,25 @@ const backgroundSource = currentScene?.backgroundUrl
 
             <View style={styles.genrePanel}>
               <View style={styles.genreGrid}>
-                {genres.map(genre => (
-                  <Pressable
-                    key={genre.id}
-                    focusable
-                    onPress={() => void createStory(genre.id)}
-                    disabled={storyLoading}
-                    style={({pressed}) => [
-                      styles.genreCard,
-                      {backgroundColor: genre.color},
-                      pressed && styles.genreCardPressed,
-                      storyLoading && styles.genreCardDisabled,
-                    ]}>
-                    <Text style={styles.genreEmoji}>{genre.emoji}</Text>
-                    <Text style={styles.genreTitle}>{genre.title}</Text>
-                    <Text style={styles.genreDescription}>
-                      {genre.description}
-                    </Text>
-                    <Text style={styles.genreAction}>
-                      {storyLoading && selectedGenre === genre.id
-                        ? 'Creating...'
-                        : 'SELECT  ›'}
-                    </Text>
-                  </Pressable>
-                ))}
+                <Pressable
+                  focusable
+                  onPress={() => void createStory('magical')}
+                  disabled={storyLoading}
+                  style={({pressed}) => [
+                    styles.genreCard,
+                    {backgroundColor: '#45316C'},
+                    pressed && styles.genreCardPressed,
+                    storyLoading && styles.genreCardDisabled,
+                  ]}>
+                  <Text style={styles.genreEmoji}>✨</Text>
+                  <Text style={styles.genreTitle}>Start Your Story</Text>
+                  <Text style={styles.genreDescription}>
+                    Bring your drawing to life in a magical adventure.
+                  </Text>
+                  <Text style={styles.genreAction}>
+                    {storyLoading ? 'Creating...' : 'LET’S BEGIN  ›'}
+                  </Text>
+                </Pressable>
               </View>
 
               {errorMessage ? (
