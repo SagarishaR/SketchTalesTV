@@ -2,96 +2,240 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2a1760">
 <title>SketchTales — Connect & Upload</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+
 <style>
+:root {
+  --ink: #fff8e7;
+  --soft: #d9d2f5;
+  --sun: #ffd166;
+  --sun-deep: #e69a00;
+  --pink: #ff8fb8;
+  --teal: #5eead4;
+  --teal-deep: #14a394;
+  --card: rgba(24, 14, 64, 0.62);
+  --line: rgba(255, 255, 255, 0.2);
+}
+
 * { box-sizing: border-box; }
+
+html { background: #2a1760; }
 
 body {
   margin: 0;
   min-height: 100vh;
-  padding: 24px 16px;
-  background: #10121c;
-  color: #f7f5ff;
-  font-family: system-ui, sans-serif;
+  padding: calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));
+  color: var(--ink);
+  font-family: 'Baloo 2', ui-rounded, 'Arial Rounded MT Bold', system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 85% 8%, #ffe9a8 0 34px, transparent 36px),
+    linear-gradient(180deg, #1b1450 0%, #3a1c71 48%, #b4478f 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;
 }
+
+/* ---------- sky decoration ---------- */
+.sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.star {
+  position: absolute; color: #fff3b0; opacity: .8;
+  animation: twinkle 3s ease-in-out infinite;
+}
+.star:nth-child(1) { top: 6%;  left: 10%; font-size: 14px; }
+.star:nth-child(2) { top: 14%; left: 70%; font-size: 10px; animation-delay: .8s; }
+.star:nth-child(3) { top: 30%; left: 4%;  font-size: 11px; animation-delay: 1.6s; }
+.star:nth-child(4) { top: 46%; left: 92%; font-size: 16px; animation-delay: .4s; }
+.star:nth-child(5) { top: 66%; left: 8%;  font-size: 12px; animation-delay: 2.1s; }
+.star:nth-child(6) { top: 80%; left: 84%; font-size: 12px; animation-delay: 1.2s; }
+.cloud {
+  position: absolute; height: 26px; width: 90px; border-radius: 40px;
+  background: rgba(255, 255, 255, .13);
+  animation: drift 40s linear infinite;
+}
+.cloud::before, .cloud::after {
+  content: ''; position: absolute; background: inherit; border-radius: 50%;
+}
+.cloud::before { width: 38px; height: 38px; left: 14px; top: -18px; }
+.cloud::after  { width: 28px; height: 28px; left: 46px; top: -12px; }
+.cloud.c1 { top: 22%; left: -120px; }
+.cloud.c2 { top: 58%; left: -120px; animation-duration: 55s; animation-delay: -20s; transform: scale(1.3); }
+
+@keyframes twinkle { 0%, 100% { opacity: .25; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+@keyframes drift { to { transform: translateX(calc(100vw + 260px)); } }
 
 main {
-  width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
+  position: relative; z-index: 1;
+  width: 100%; max-width: 440px; margin: 0 auto;
 }
 
-h1 { font-size: 28px; margin-bottom: 8px; }
-p { color: #b8b6ca; line-height: 1.5; }
+/* ---------- header ---------- */
+.hero { text-align: center; padding: 6px 0 4px; }
+.logo {
+  display: inline-grid; place-items: center;
+  width: 74px; height: 74px; font-size: 38px;
+  border-radius: 24px; transform: rotate(-6deg);
+  background: linear-gradient(145deg, var(--sun), var(--pink));
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .22), 0 0 34px rgba(255, 209, 102, .45);
+  animation: wiggle 4s ease-in-out infinite;
+}
+@keyframes wiggle { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(5deg) translateY(-3px); } }
+h1 {
+  margin: 10px 0 2px; font-size: 40px; font-weight: 800; letter-spacing: .5px;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, .25);
+}
+h1 span { color: var(--sun); }
+.tag { margin: 0 auto; max-width: 320px; font-size: 18px; line-height: 1.25; color: var(--soft); }
 
+/* ---------- steps ---------- */
+.steps { list-style: none; display: flex; gap: 8px; margin: 18px 0 4px; padding: 0; }
+.steps li {
+  flex: 1; text-align: center; padding: 8px 4px 7px; border-radius: 16px;
+  font-size: 14px; font-weight: 700; color: var(--soft);
+  background: rgba(255, 255, 255, .07); border: 2px solid transparent;
+  transition: all .3s;
+}
+.steps li span { display: block; font-size: 22px; line-height: 1.1; filter: grayscale(.8); opacity: .7; }
+.steps li.active {
+  color: #3a2300; background: linear-gradient(180deg, var(--sun), #ffb84d);
+  box-shadow: 0 0 22px rgba(255, 209, 102, .5);
+}
+.steps li.active span { filter: none; opacity: 1; animation: hop 1.6s ease-in-out infinite; }
+.steps li.done { color: var(--ink); border-color: var(--teal); background: rgba(94, 234, 212, .14); }
+.steps li.done span { filter: none; opacity: 1; }
+@keyframes hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* ---------- cards ---------- */
 .card {
-  margin-top: 20px;
-  padding: 20px;
-  background: #1b1e2c;
-  border: 1px solid #34374b;
-  border-radius: 18px;
+  margin-top: 16px; padding: 20px 18px 18px;
+  background: var(--card); border: 2px solid var(--line); border-radius: 26px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(8, 4, 30, .35);
+  animation: pop .45s cubic-bezier(.2, 1.4, .4, 1) both;
 }
+@keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+h2 { margin: 0 0 4px; font-size: 24px; font-weight: 800; }
+p { margin: 6px 0; color: var(--soft); font-size: 17px; line-height: 1.35; }
+.hint { font-size: 14px; opacity: .85; }
 
-input, button {
-  width: 100%;
-  min-height: 48px;
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 10px;
-  font: inherit;
-}
+input, button { width: 100%; min-height: 54px; margin-top: 12px; font: inherit; border-radius: 18px; }
 
 input {
-  color: #fff;
-  background: #11131d;
-  border: 1px solid #484b60;
+  padding: 10px 14px; color: var(--ink);
+  background: rgba(10, 6, 36, .55); border: 2px solid var(--line);
 }
-
-input[type="file"] { padding: 10px; }
+input:focus { outline: 3px solid var(--sun); outline-offset: 1px; }
+#code {
+  text-align: center; font-size: 34px; font-weight: 800; letter-spacing: 12px;
+  padding-left: 24px; color: var(--sun);
+}
+input[type="file"] { padding: 12px; font-size: 16px; }
+input[type="file"]::file-selector-button {
+  margin-right: 10px; padding: 8px 14px; border: 0; border-radius: 12px;
+  background: var(--pink); color: #4a0f2c; font: inherit; font-weight: 700;
+}
 
 button {
-  border: 0;
-  background: #b9a0ff;
-  color: #171126;
-  font-weight: 700;
-  cursor: pointer;
+  border: 0; cursor: pointer; font-size: 20px; font-weight: 800; color: #3a2300;
+  background: linear-gradient(180deg, #ffe08a, var(--sun) 60%, #ffb84d);
+  box-shadow: 0 6px 0 var(--sun-deep), 0 10px 18px rgba(0, 0, 0, .3);
+  transition: transform .08s, box-shadow .08s;
+  -webkit-tap-highlight-color: transparent;
+}
+button:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 1px 0 var(--sun-deep); }
+button:disabled { opacity: .55; cursor: default; }
+button.secondary {
+  color: #05413a; background: linear-gradient(180deg, #a7f3e6, var(--teal) 60%, #35cdb8);
+  box-shadow: 0 6px 0 var(--teal-deep), 0 10px 18px rgba(0, 0, 0, .3);
+}
+button.secondary:active:not(:disabled) { box-shadow: 0 1px 0 var(--teal-deep); }
+button.ghost {
+  color: var(--ink); background: rgba(255, 255, 255, .1);
+  box-shadow: inset 0 0 0 2px var(--line);
 }
 
-button:disabled { opacity: 0.5; }
-
+/* polaroid preview */
 #preview {
-  display: none;
-  width: 100%;
-  max-height: 300px;
-  margin-top: 16px;
-  object-fit: contain;
-  background: #11131d;
-  border-radius: 12px;
+  display: none; width: 100%; max-height: 300px; margin-top: 18px; object-fit: contain;
+  background: #fff8e7; padding: 10px 10px 26px; border-radius: 8px;
+  transform: rotate(-1.5deg); box-shadow: 0 10px 24px rgba(0, 0, 0, .4);
 }
 
+/* hero cut-out card */
+#heroPreview { display: none; margin-top: 18px; text-align: center; }
+#heroImage {
+  width: 100%; max-height: 240px; object-fit: contain; border-radius: 20px; padding: 10px;
+  background: repeating-conic-gradient(rgba(255,255,255,.16) 0 25%, rgba(255,255,255,.06) 0 50%) 0 0 / 22px 22px;
+  border: 2px dashed var(--teal);
+}
+#heroPreview p { margin: 8px 0 0; font-size: 18px; font-weight: 700; color: var(--teal); }
+
+/* gesture area */
 #gestureVideo {
-  width: 100%;
-  margin-top: 12px;
-  border-radius: 12px;
-  background: #11131d;
+  width: 100%; margin-top: 12px; border-radius: 22px; background: #0a0624;
+  border: 3px solid var(--sun); transform: scaleX(-1);   /* mirror, like a mirror */
+}
+.chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0 4px; }
+.chip {
+  padding: 10px 8px; border-radius: 16px; text-align: center; font-size: 14px; font-weight: 700;
+  line-height: 1.15; background: rgba(255, 255, 255, .09); border: 2px solid transparent;
+  transition: all .2s;
+}
+.chip b { display: block; font-size: 26px; font-weight: 400; }
+.chip.hit {
+  background: rgba(94, 234, 212, .3); border-color: var(--teal); transform: scale(1.07);
+  box-shadow: 0 0 20px rgba(94, 234, 212, .6);
 }
 
 #uploadCard, #gestureCard { display: none; }
 #status, #gestureStatus { overflow-wrap: anywhere; }
-.hint { font-size: 13px; }
+#statusCard { padding: 14px 18px; }
+#status { margin: 0; text-align: center; font-size: 18px; font-weight: 700; color: var(--ink); }
+#gestureStatus { font-weight: 700; color: var(--sun); }
+
+/* confetti */
+.bit {
+  position: fixed; left: 50%; top: 62%; z-index: 20; font-size: 26px; pointer-events: none;
+  animation: fly 1.3s ease-out forwards;
+}
+@keyframes fly {
+  from { opacity: 1; transform: translate(-50%, 0) scale(.6); }
+  to   { opacity: 0; transform: translate(calc(-50% + var(--dx)), var(--dy)) rotate(var(--rot)) scale(1.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
 </style>
 </head>
 
 <body>
+<div class="sky" aria-hidden="true">
+  <span class="star">✦</span><span class="star">✦</span><span class="star">✦</span>
+  <span class="star">✦</span><span class="star">✦</span><span class="star">✦</span>
+  <div class="cloud c1"></div><div class="cloud c2"></div>
+</div>
+
 <main>
-  <h1>SketchTales ✦</h1>
-  <p>Turn your child's drawing into an animated story on your TV.</p>
+  <header class="hero">
+    <div class="logo" aria-hidden="true">✏️</div>
+    <h1>Sketch<span>Tales</span></h1>
+    <p class="tag">Draw it. Snap it. Watch it come alive on the big screen!</p>
+  </header>
+
+  <ol class="steps" id="steps" aria-label="Progress">
+    <li data-step="1" class="active"><span>📺</span>Connect</li>
+    <li data-step="2"><span>🎨</span>Drawing</li>
+    <li data-step="3"><span>✋</span>Play</li>
+  </ol>
 
   <section class="card">
     <h2>1. Connect to your TV</h2>
-    <p>Enter the six-digit code displayed on SketchTales TV.</p>
+    <p>Type the six-digit code you see on the TV screen.</p>
 
     <form id="pairForm">
       <input
@@ -109,47 +253,54 @@ button:disabled { opacity: 0.5; }
 
   <section class="card" id="uploadCard">
     <h2>2. Share the drawing</h2>
-    <p>Take a photo of the drawing or choose an existing image.</p>
+    <p>Take a photo of your child's drawing, or pick one from your photos.</p>
 
     <form id="uploadForm">
       <input
         id="drawing"
         type="file"
         accept="image/jpeg,image/png"
-        capture="environment"
         aria-label="Choose or photograph a drawing"
         required
       >
 
       <img id="preview" alt="Preview of your drawing">
 
-      <p class="hint">JPEG or PNG · Maximum 8 MB</p>
-      <button id="uploadButton" type="submit">Upload drawing</button>
-      <button id="newPictureButton" type="button">Upload New Picture</button>
+      <p class="hint">JPEG or PNG · Maximum 8 MB · Bold marker or crayon on white paper works best</p>
+      <button id="uploadButton" type="submit">Bring it to life ✨</button>
+      <button id="newPictureButton" type="button" class="secondary">Choose another picture</button>
     </form>
-  </section>
 
-  <section class="card" id="gestureCard">
-    <h2>3. Story controls</h2>
-    <p>Your story is ready! Enable gestures when you want to control the TV.</p>
-    <p class="hint">
-      Video processing stays on this phone. Only gesture commands are sent.
-    </p>
-
-    <button id="useGesturesButton" type="button">Open camera</button>
-
-    <div id="gestureArea" style="display:none">
-      <video id="gestureVideo" autoplay playsinline muted></video>
-      <p>Check the camera preview, then start gesture control when ready.</p>
-      <p id="gestureStatus" role="status" aria-live="polite">
-        Camera is off.
-      </p>
-      <button id="startGesturesButton" type="button">Start gesture control</button>
-      <button id="stopGesturesButton" type="button">Stop camera</button>
+    <div id="heroPreview">
+      <img id="heroImage" alt="Your cut-out hero">
+      <p>Meet your hero! 🎉</p>
     </div>
   </section>
 
-  <section class="card">
+  <section class="card" id="gestureCard">
+    <h2>3. Magic hand controls</h2>
+    <p>The story is ready on the TV! Want to control it with your hand? The camera stays on this phone.</p>
+
+    <div class="chips" aria-hidden="true">
+      <div class="chip" data-g="open_palm"><b>✋</b>Hold still<br>pause / play</div>
+      <div class="chip" data-g="thumbs_up"><b>👍</b>Thumbs up<br>restart story</div>
+      <div class="chip" data-g="swipe_left"><b>👈</b>Swipe left<br>next scene</div>
+      <div class="chip" data-g="swipe_right"><b>👉</b>Swipe right<br>previous scene</div>
+    </div>
+    <p class="hint">Video processing stays on this phone. Only the command is sent.</p>
+
+    <button id="useGesturesButton" type="button" class="secondary">Open camera 📷</button>
+
+    <div id="gestureArea" style="display:none">
+      <video id="gestureVideo" autoplay playsinline muted></video>
+      <p id="gestureStatus" role="status" aria-live="polite">Camera is off.</p>
+      <p class="hint">Hold the phone steady and move your hand across the picture, about 30 cm from the camera.</p>
+      <button id="startGesturesButton" type="button">Start hand control ✋</button>
+      <button id="stopGesturesButton" type="button" class="ghost">Stop camera</button>
+    </div>
+  </section>
+
+  <section class="card" id="statusCard">
     <p id="status" role="status" aria-live="polite">Ready to connect.</p>
   </section>
 </main>
@@ -169,21 +320,9 @@ const preview = document.getElementById('preview');
 const connectButton = document.getElementById('connectButton');
 const uploadButton = document.getElementById('uploadButton');
 const newPictureButton = document.getElementById('newPictureButton');
-
-newPictureButton.addEventListener('click', () => {
-  // Clear the previous selection and preview.
-  drawingInput.value = '';
-  preview.removeAttribute('src');
-  preview.style.display = 'none';
-
-  if (previewUrl) {
-    URL.revokeObjectURL(previewUrl);
-    previewUrl = null;
-  }
-
-  // Open the phone's photo picker or camera.
-  drawingInput.click();
-});
+const heroPreview = document.getElementById('heroPreview');
+const heroImage = document.getElementById('heroImage');
+const stepItems = document.querySelectorAll('#steps li');
 
 const gestureCard = document.getElementById('gestureCard');
 const gestureArea = document.getElementById('gestureArea');
@@ -199,12 +338,54 @@ let previewUrl = null;
 let gestureStream = null;
 let gestureRecognizer = null;
 let gestureRunning = false;
-let lastGestureTime = 0;
-let previousWristX = null;
-let previousWristTime = 0;
-let pendingPose = '';
-let pendingPoseSince = 0;
-let lastSentGesture = '';
+let detector = null;
+let lastVideoTime = -1;
+
+// ---------- little helpers for the friendly look ----------
+function setStep(n) {
+  stepItems.forEach(item => {
+    const step = Number(item.dataset.step);
+    item.classList.toggle('done', step < n);
+    item.classList.toggle('active', step === n);
+  });
+}
+
+function burst(emojis) {
+  for (let i = 0; i < 16; i++) {
+    const bit = document.createElement('span');
+    bit.className = 'bit';
+    bit.textContent = emojis[i % emojis.length];
+    bit.style.setProperty('--dx', `${Math.round((Math.random() - 0.5) * 320)}px`);
+    bit.style.setProperty('--dy', `${-Math.round(80 + Math.random() * 260)}px`);
+    bit.style.setProperty('--rot', `${Math.round((Math.random() - 0.5) * 360)}deg`);
+    bit.style.animationDelay = `${Math.round(Math.random() * 120)}ms`;
+    document.body.appendChild(bit);
+    setTimeout(() => bit.remove(), 1600);
+  }
+}
+
+function flashChip(action) {
+  const chip = document.querySelector(`.chip[data-g="${action}"]`);
+  if (!chip) return;
+  chip.classList.add('hit');
+  setTimeout(() => chip.classList.remove('hit'), 900);
+}
+
+newPictureButton.addEventListener('click', () => {
+  // Clear the previous selection and preview.
+  drawingInput.value = '';
+  preview.removeAttribute('src');
+  preview.style.display = 'none';
+  heroPreview.style.display = 'none';
+
+  if (previewUrl) {
+    URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+  }
+
+  // Open the phone's photo picker or camera.
+  drawingInput.click();
+});
 
 codeInput.value = params.get('code') || '';
 
@@ -255,7 +436,9 @@ document.getElementById('pairForm').addEventListener(
 
       paired = true;
       uploadCard.style.display = 'block';
-      status.textContent = 'Connected! Choose your drawing below.';
+      setStep(2);
+      burst(['⭐', '✨', '🎈']);
+      status.textContent = 'Connected! Now choose your drawing below. 🎨';
       await checkStoryReady();
     } catch (error) {
       status.textContent = error.message || 'Could not connect. Try again.';
@@ -274,6 +457,7 @@ drawingInput.addEventListener('change', () => {
   }
 
   preview.style.display = 'none';
+  heroPreview.style.display = 'none';
 
   if (!file) return;
 
@@ -292,8 +476,20 @@ drawingInput.addEventListener('change', () => {
   previewUrl = URL.createObjectURL(file);
   preview.src = previewUrl;
   preview.style.display = 'block';
-  status.textContent = 'Preview your drawing, then upload it.';
+  status.textContent = 'Looks great! Tap “Bring it to life”.';
 });
+
+async function showCutout(code) {
+  try {
+    const response = await fetch(`/api/pairing/${code}/cutout`);
+    if (!response.ok) return;
+    const result = await response.json();
+    heroImage.src = `data:${result.mimeType};base64,${result.data}`;
+    heroPreview.style.display = 'block';
+  } catch (error) {
+    console.error('Could not show the cut-out:', error);
+  }
+}
 
 document.getElementById('uploadForm').addEventListener(
   'submit',
@@ -316,11 +512,12 @@ document.getElementById('uploadForm').addEventListener(
     formData.append('drawing', file);
 
     uploadButton.disabled = true;
-    status.textContent = 'Uploading your drawing...';
+    status.textContent = 'Cutting out your hero... ✂️';
 
     try {
+      const code = codeInput.value.trim();
       const response = await fetch(
-        `/api/pairing/${codeInput.value.trim()}/drawing`,
+        `/api/pairing/${code}/drawing`,
         { method: 'POST', body: formData }
       );
 
@@ -333,8 +530,11 @@ document.getElementById('uploadForm').addEventListener(
       drawingUploaded = true;
       gestureCard.style.display = 'block';
       gestureArea.style.display = 'none';
+      setStep(3);
+      burst(['🎉', '⭐', '✨', '🦄']);
       status.textContent =
-        'Drawing uploaded! You can open the camera whenever you are ready.';
+        'Your hero is ready! Pick a story on the TV. 📺';
+      await showCutout(code);
     } catch (error) {
       status.textContent = error.message || 'Upload failed. Please try again.';
     } finally {
@@ -358,7 +558,7 @@ async function sendGesture(gesture) {
       throw new Error(result.error || 'Could not send gesture');
     }
 
-    gestureStatus.textContent = `Sent: ${gesture}`;
+    gestureStatus.textContent = `Sent: ${gesture.replace('_', ' ')} ✔`;
   } catch (error) {
     gestureStatus.textContent = error.message;
   }
@@ -379,7 +579,7 @@ useGesturesButton.addEventListener('click', async () => {
 
     gestureArea.style.display = 'block';
     gestureStatus.textContent =
-      'Camera preview is on. Start gesture control when ready.';
+      'Camera preview is on. Start hand control when ready.';
   } catch (error) {
     gestureStatus.textContent =
       'Could not open camera: ' + error.message;
@@ -405,14 +605,10 @@ startGesturesButton.addEventListener('click', async () => {
       numHands: 1
     });
 
+    detector = createGestureDetector();
+    lastVideoTime = -1;
     gestureRunning = true;
-    lastGestureTime = 0;
-    previousWristX = null;
-    previousWristTime = 0;
-    pendingPose = '';
-    pendingPoseSince = 0;
-    lastSentGesture = '';
-    gestureStatus.textContent = 'Gesture control started. Show your hand.';
+    gestureStatus.textContent = 'Hand control is on. Show your hand! ✋';
     detectPhoneGestures();
   } catch (error) {
     gestureStatus.textContent =
@@ -444,75 +640,184 @@ function stopCamera() {
   useGesturesButton.disabled = false;
 }
 
+// ==== GESTURE DETECTOR START (pure logic, no browser calls) ====
+// A swipe = the palm travels far enough, fast enough and in one direction
+// inside a short time window. A still hand held up = pause/play.
+const GESTURE_TUNING = {
+  // The front camera picture is NOT mirrored, so flip x. Then "left" means the
+  // user's own left. If next/previous ever feel reversed, set this to false.
+  mirror: true,
+  windowMs: 450,          // look at the last 0.45 s of hand movement
+  minSwipeDist: 0.18,     // palm must travel 18% of the picture width
+  minSwipeMs: 120,        // ...but not in a single jittery frame
+  minMonotonic: 0.7,      // 70% of the small steps must go the same way
+  swipeCooldownMs: 1200,  // one swipe at a time
+  handSettleMs: 250,      // a hand that just entered the picture can't swipe yet
+  stillDist: 0.04,        // "still" = moved less than 4% of the width
+  holdMs: 500,            // hold a pose this long to trigger it
+  staticCooldownMs: 1500,
+  afterSwipeQuietMs: 1000 // an open hand that just swiped must not also "pause"
+};
+
+function createGestureDetector(tuning = GESTURE_TUNING) {
+  let hist = [];
+  let handSince = null;
+  let lastSwipeAt = -1e9;
+  let lastStaticAt = -1e9;
+  let heldPose = '';
+  let heldSince = 0;
+  let heldFired = false;
+
+  // t = time in ms, handX = palm x (0..1) or null if no hand, pose = MediaPipe pose name.
+  // Returns '', 'swipe_left', 'swipe_right', 'open_palm' or 'thumbs_up'.
+  function update(t, handX, pose) {
+    if (handX === null || handX === undefined) {
+      hist = [];
+      handSince = null;
+      heldPose = '';
+      heldFired = false;
+      return '';
+    }
+
+    const x = tuning.mirror ? 1 - handX : handX;
+    if (handSince === null) handSince = t;
+
+    // A hand that has only just come into view is still "arriving": its first
+    // movements are ignored, so walking into the picture never counts as a swipe.
+    if (t - handSince < tuning.handSettleMs) return '';
+
+    hist.push({ t, x });
+    while (hist.length && t - hist[0].t > tuning.windowMs) hist.shift();
+
+    // ---- swipe ----
+    if (
+      t - lastSwipeAt >= tuning.swipeCooldownMs &&
+      hist.length >= 4
+    ) {
+      const first = hist[0];
+      const last = hist[hist.length - 1];
+      const span = last.t - first.t;
+      const dx = last.x - first.x;
+
+      if (span >= tuning.minSwipeMs && Math.abs(dx) >= tuning.minSwipeDist) {
+        let same = 0;
+        let total = 0;
+        for (let i = 1; i < hist.length; i++) {
+          const step = hist[i].x - hist[i - 1].x;
+          if (Math.abs(step) > 0.002) {
+            total++;
+            if (step > 0 === dx > 0) same++;
+          }
+        }
+        if (total > 0 && same / total >= tuning.minMonotonic) {
+          lastSwipeAt = t;
+          hist = [];
+          heldPose = '';
+          heldFired = false;
+          return dx < 0 ? 'swipe_left' : 'swipe_right';
+        }
+      }
+    }
+
+    // ---- held poses (only when the hand is still) ----
+    if (t - lastSwipeAt < tuning.afterSwipeQuietMs) {
+      heldPose = '';
+      heldFired = false;
+      return '';
+    }
+
+    let min = 1;
+    let max = 0;
+    for (const h of hist) {
+      if (h.x < min) min = h.x;
+      if (h.x > max) max = h.x;
+    }
+    const still = hist.length >= 3 && max - min <= tuning.stillDist;
+
+    if (pose !== heldPose || !still) {
+      heldPose = pose;
+      heldSince = t;
+      heldFired = false;
+      return '';
+    }
+
+    if (
+      !heldFired &&
+      t - heldSince >= tuning.holdMs &&
+      t - lastStaticAt >= tuning.staticCooldownMs
+    ) {
+      let action = '';
+      if (pose === 'Open_Palm') action = 'open_palm';
+      if (pose === 'Thumb_Up') action = 'thumbs_up';
+      if (action) {
+        heldFired = true;
+        lastStaticAt = t;
+        return action;
+      }
+    }
+    return '';
+  }
+
+  return { update };
+}
+
+// Middle of the hand (wrist + the 4 finger bases) is steadier than the wrist alone.
+function palmX(landmarks) {
+  const ids = [0, 5, 9, 13, 17];
+  let sum = 0;
+  let n = 0;
+  for (const id of ids) {
+    if (landmarks[id]) {
+      sum += landmarks[id].x;
+      n++;
+    }
+  }
+  return n ? sum / n : null;
+}
+// ==== GESTURE DETECTOR END ====
+
+const POSE_NAMES = {
+  Open_Palm: 'open hand ✋',
+  Thumb_Up: 'thumbs up 👍',
+  Closed_Fist: 'fist ✊',
+  Pointing_Up: 'pointing ☝️',
+  Victory: 'victory ✌️',
+  ILoveYou: 'love 🤟',
+  Thumb_Down: 'thumbs down 👎',
+  None: 'a hand'
+};
+
 async function detectPhoneGestures() {
   if (!gestureRunning || !gestureRecognizer) return;
 
   try {
-    if (gestureVideo.readyState >= 2) {
+    if (gestureVideo.readyState >= 2 && gestureVideo.currentTime !== lastVideoTime) {
+      lastVideoTime = gestureVideo.currentTime;
+
       const now = performance.now();
       const result = gestureRecognizer.recognizeForVideo(gestureVideo, now);
       const pose = result.gestures?.[0]?.[0]?.categoryName || 'None';
+      const landmarks = result.landmarks?.[0];
+      const handX = landmarks ? palmX(landmarks) : null;
 
-      let action = '';
+      const action = detector.update(now, handX, pose);
 
-      // --- Static pose detection (hold for 600 ms) ---
-      if (pose !== pendingPose) {
-        pendingPose = pose;
-        pendingPoseSince = now;
+      if (handX === null) {
+        gestureStatus.textContent = 'Show your hand to the camera 👋';
+      } else if (!action) {
+        gestureStatus.textContent = `I can see ${POSE_NAMES[pose] || 'a hand'}`;
       }
 
-      if (now - pendingPoseSince >= 600) {
-        if (pose === 'Open_Palm') action = 'open_palm';
-        if (pose === 'Thumb_Up') action = 'thumbs_up';
-      }
-
-      // --- Swipe left / right (horizontal wrist movement) ---
-      const wrist = result.landmarks?.[0]?.[0]; // wrist landmark
-
-      if (wrist) {
-        if (previousWristX === null || previousWristTime === 0) {
-          previousWristX = wrist.x;
-          previousWristTime = now;
-        } else {
-          const elapsed = now - previousWristTime;
-          const dx = wrist.x - previousWristX;
-
-          // Detect deliberate horizontal swipe
-          if (elapsed >= 80 && elapsed <= 900 && Math.abs(dx) > 0.12) {
-            // dx < 0 → hand moved left → swipe_left
-            // dx > 0 → hand moved right → swipe_right
-            action = dx < 0 ? 'swipe_left' : 'swipe_right';
-
-            // Reset baseline so the same swipe isn't repeated
-            previousWristX = null;
-            previousWristTime = 0;
-          } else if (elapsed > 900) {
-            // Refresh baseline if the hand has been still for a while
-            previousWristX = wrist.x;
-            previousWristTime = now;
-          }
-        }
-      } else {
-        previousWristX = null;
-        previousWristTime = 0;
-      }
-
-      gestureStatus.textContent = `Detected: ${pose}${action ? ` → ${action}` : ''}`;
-
-      // Send gesture once, with 1.5 s cooldown
-      if (action && now - lastGestureTime > 1500 && action !== lastSentGesture) {
-        lastGestureTime = now;
-        lastSentGesture = action;
+      if (action) {
+        flashChip(action);
         await sendGesture(action);
       }
-
-      if (!action) lastSentGesture = '';
     }
   } catch (error) {
     gestureStatus.textContent = 'Gesture detection error: ' + error.message;
   }
 
-  if (gestureRunning) setTimeout(detectPhoneGestures, 100);
+  if (gestureRunning) setTimeout(detectPhoneGestures, 50);
 }
 
 window.addEventListener('pagehide', stopCamera);

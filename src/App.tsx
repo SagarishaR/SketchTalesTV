@@ -22,7 +22,7 @@ import {
 // Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
 // Change this one line if the address printed there is different.
 // NOTE: a Cloudflare quick-tunnel address changes every time the tunnel restarts.
-const API_BASE = 'https://completed-dimensions-instructor-match.trycloudflare.com';
+const API_BASE = 'https://antonio-governor-transport-bachelor.trycloudflare.com';
 
 // To test the player on its own, paste any https .mp3 link here
 // (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
@@ -343,6 +343,451 @@ const splitCaptions = (text: string): string[] => {
 const steps = (n: number, amp: number) =>
   Array.from({length: n * 2 + 1}, (_, i) => (i % 2 === 1 ? -amp : 0));
 
+// ---------------------------------------------------------------------------
+// Storybook scenery: sky, clouds, hills, sparkle bursts and the book cover
+// ---------------------------------------------------------------------------
+
+const SKY_STARS = [
+  {x: 0.04, y: 0.08, size: 18, delay: 0},
+  {x: 0.14, y: 0.2, size: 12, delay: 900},
+  {x: 0.27, y: 0.06, size: 16, delay: 1500},
+  {x: 0.38, y: 0.17, size: 11, delay: 400},
+  {x: 0.47, y: 0.05, size: 20, delay: 1200},
+  {x: 0.58, y: 0.14, size: 12, delay: 2000},
+  {x: 0.66, y: 0.3, size: 14, delay: 700},
+  {x: 0.74, y: 0.06, size: 16, delay: 1700},
+  {x: 0.93, y: 0.34, size: 14, delay: 300},
+  {x: 0.03, y: 0.45, size: 12, delay: 1100},
+  {x: 0.52, y: 0.4, size: 10, delay: 1900},
+  {x: 0.96, y: 0.6, size: 12, delay: 600},
+];
+
+type CloudProps = {
+  top: number;
+  width: number;
+  duration: number;
+  phase: number;
+  alpha: number;
+  travel: number;
+};
+
+// A soft cloud that drifts slowly across the sky.
+const Cloud = ({top, width, duration, phase, alpha, travel}: CloudProps) => {
+  const t = useRef(new Animated.Value(phase)).current;
+
+  useEffect(() => {
+    t.setValue(phase);
+    const loop = Animated.loop(
+      Animated.timing(t, {
+        toValue: 1,
+        duration,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [t, duration, phase]);
+
+  const tint = `rgba(255,255,255,${alpha})`;
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        top,
+        left: 0,
+        width,
+        height: width * 0.4,
+        transform: [
+          {
+            translateX: t.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-width, travel],
+            }),
+          },
+        ],
+      }}>
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: width * 0.26,
+          borderRadius: width * 0.13,
+          backgroundColor: tint,
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: width * 0.14,
+          bottom: width * 0.1,
+          width: width * 0.4,
+          height: width * 0.4,
+          borderRadius: width * 0.2,
+          backgroundColor: tint,
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: width * 0.46,
+          bottom: width * 0.1,
+          width: width * 0.3,
+          height: width * 0.3,
+          borderRadius: width * 0.15,
+          backgroundColor: tint,
+        }}
+      />
+    </Animated.View>
+  );
+};
+
+// Night sky with a glowing moon, twinkling stars, drifting clouds and rolling hills.
+const SkyBackdrop = ({w, h}: {w: number; h: number}) => {
+  const glow = useLoop(2600);
+  const moon = Math.max(70, Math.round(h * 0.17));
+  const halo = moon * 2.4;
+  const cx = w * 0.86;
+  const cy = h * 0.18;
+
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+      {/* sunrise glow behind the hills */}
+      <View
+        style={{
+          position: 'absolute',
+          left: w * 0.05,
+          top: h * 0.6,
+          width: w * 0.9,
+          height: w * 0.9,
+          borderRadius: w * 0.45,
+          backgroundColor: '#6B2FA6',
+          opacity: 0.3,
+        }}
+      />
+
+      {/* moon and its breathing halo */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          left: cx - halo / 2,
+          top: cy - halo / 2,
+          width: halo,
+          height: halo,
+          borderRadius: halo / 2,
+          backgroundColor: '#FFF1B8',
+          opacity: glow.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.1, 0.22],
+          }),
+          transform: [
+            {
+              scale: glow.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 1.1],
+              }),
+            },
+          ],
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: cx - moon / 2,
+          top: cy - moon / 2,
+          width: moon,
+          height: moon,
+          borderRadius: moon / 2,
+          backgroundColor: '#FFF1B8',
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: cx - moon * 0.05,
+          top: cy - moon * 0.28,
+          width: moon * 0.2,
+          height: moon * 0.2,
+          borderRadius: moon * 0.1,
+          backgroundColor: '#F3DB93',
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: cx - moon * 0.3,
+          top: cy + moon * 0.05,
+          width: moon * 0.14,
+          height: moon * 0.14,
+          borderRadius: moon * 0.07,
+          backgroundColor: '#F3DB93',
+        }}
+      />
+
+      {SKY_STARS.map((star, i) => (
+        <Sparkle key={i} {...star} />
+      ))}
+
+      <Cloud top={h * 0.14} width={150} duration={70000} phase={0.15} alpha={0.12} travel={w} />
+      <Cloud top={h * 0.34} width={210} duration={95000} phase={0.55} alpha={0.09} travel={w} />
+      <Cloud top={h * 0.5} width={120} duration={60000} phase={0.85} alpha={0.1} travel={w} />
+
+      {/* rolling hills */}
+      <View
+        style={{
+          position: 'absolute',
+          left: -w * 0.2,
+          top: h * 0.86,
+          width: w * 1.1,
+          height: w * 1.1,
+          borderRadius: w * 0.55,
+          backgroundColor: '#2B1B6B',
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: w * 0.4,
+          top: h * 0.9,
+          width: w * 0.9,
+          height: w * 0.9,
+          borderRadius: w * 0.45,
+          backgroundColor: '#3A2587',
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: -w * 0.35,
+          top: h * 0.95,
+          width: w * 1.3,
+          height: w * 1.3,
+          borderRadius: w * 0.65,
+          backgroundColor: '#1C1250',
+        }}
+      />
+    </View>
+  );
+};
+
+const BURST_ITEMS = Array.from({length: 16}, (_, i) => {
+  const angle = (i / 16) * Math.PI * 2;
+  return {
+    dx: Math.cos(angle),
+    dy: Math.sin(angle),
+    glyph: ['✦', '★', '✧', '✺'][i % 4],
+    color: ['#FFD166', '#FF8FB8', '#5EEAD4', '#FFFFFF'][i % 4],
+    size: 18 + (i % 3) * 8,
+    dist: 120 + (i % 4) * 40,
+  };
+});
+
+// A one-time burst of stars flying out from a point.
+const Burst = ({
+  x,
+  y,
+  delay = 0,
+}: {
+  x: number | string;
+  y: number | string;
+  delay?: number;
+}) => {
+  const t = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    t.setValue(0);
+    const anim = Animated.sequence([
+      Animated.delay(delay),
+      Animated.timing(t, {
+        toValue: 1,
+        duration: 1300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]);
+    anim.start();
+    return () => anim.stop();
+  }, [t, delay]);
+
+  return (
+    <View
+      pointerEvents="none"
+      style={{position: 'absolute', left: x as any, top: y as any}}>
+      {BURST_ITEMS.map((item, i) => (
+        <Animated.Text
+          key={i}
+          style={{
+            position: 'absolute',
+            fontSize: item.size,
+            color: item.color,
+            opacity: t.interpolate({
+              inputRange: [0, 0.05, 0.7, 1],
+              outputRange: [0, 1, 1, 0],
+            }),
+            transform: [
+              {
+                translateX: t.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, item.dx * item.dist],
+                }),
+              },
+              {
+                translateY: t.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, item.dy * item.dist],
+                }),
+              },
+              {
+                scale: t.interpolate({
+                  inputRange: [0, 0.3, 1],
+                  outputRange: [0.3, 1.2, 0.6],
+                }),
+              },
+            ],
+          }}>
+          {item.glyph}
+        </Animated.Text>
+      ))}
+    </View>
+  );
+};
+
+const BOOK_HOLD_MS = 1100; // the closed book waits
+const BOOK_OPEN_MS = 1700; // the covers swing open
+
+// One half of the storybook cover. It folds away towards its own outer edge.
+const BookPanel = ({
+  side,
+  w,
+  h,
+  progress,
+}: {
+  side: 'left' | 'right';
+  w: number;
+  h: number;
+  progress: Animated.Value;
+}) => {
+  const half = w / 2;
+  const dir = side === 'left' ? -1 : 1;
+  const outer = side === 'left' ? {left: 14} : {right: 14};
+  const inner = side === 'left' ? {right: 0} : {left: 0};
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.bookPanel,
+        side === 'left' ? {left: 0} : {right: 0},
+        {
+          width: half,
+          height: h,
+          transform: [
+            {
+              translateX: progress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, dir * half * 0.485],
+              }),
+            },
+            {
+              scaleX: progress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 0.03],
+              }),
+            },
+          ],
+        },
+      ]}>
+      <View style={styles.bookFrameOuter} />
+      <View style={styles.bookFrameInner} />
+      <Text style={[styles.bookCorner, outer, {top: 16}]}>❖</Text>
+      <Text style={[styles.bookCorner, outer, {bottom: 16}]}>❖</Text>
+      <Text style={[styles.bookStarSmall, {left: half * 0.3, top: h * 0.22}]}>✦</Text>
+      <Text style={[styles.bookStarSmall, {left: half * 0.6, top: h * 0.74}]}>✦</Text>
+      <Text style={[styles.bookStarSmall, {left: half * 0.45, top: h * 0.1}]}>✧</Text>
+      <Text style={[styles.bookStarSmall, {left: half * 0.2, top: h * 0.62}]}>✧</Text>
+      <View style={[styles.bookSpine, inner]} />
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFillObject,
+          {
+            backgroundColor: '#000000',
+            opacity: progress.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.55],
+            }),
+          },
+        ]}
+      />
+    </Animated.View>
+  );
+};
+
+// The closed storybook that opens to reveal the first scene.
+const BookCover = ({
+  progress,
+  pulse,
+  w,
+  h,
+  title,
+}: {
+  progress: Animated.Value;
+  pulse: Animated.Value;
+  w: number;
+  h: number;
+  title: string;
+}) => (
+  <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+    <BookPanel side="left" w={w} h={h} progress={progress} />
+    <BookPanel side="right" w={w} h={h} progress={progress} />
+
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: w / 2 - 170,
+        top: h / 2 - 135,
+        width: 340,
+        alignItems: 'center',
+        opacity: progress.interpolate({
+          inputRange: [0, 0.35, 1],
+          outputRange: [1, 0, 0],
+        }),
+        transform: [
+          {
+            scale: pulse.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 1.06],
+            }),
+          },
+          {
+            scale: progress.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 1.5],
+            }),
+          },
+        ],
+      }}>
+      <View style={styles.bookMedal}>
+        <Text style={styles.bookMedalStar}>★</Text>
+      </View>
+      <Text style={styles.bookKicker}>ONCE UPON A TIME…</Text>
+      <View style={styles.bookRibbon}>
+        <Text style={styles.bookTitle} numberOfLines={2}>
+          {title}
+        </Text>
+      </View>
+      <Text style={styles.bookHint}>Opening your storybook ✦</Text>
+    </Animated.View>
+
+    <Burst x={w / 2} y={h / 2} delay={BOOK_HOLD_MS} />
+  </View>
+);
+
 type SparkleProps = {x: number; y: number; size: number; delay: number};
 
 const Sparkle = ({x, y, size, delay}: SparkleProps) => {
@@ -440,6 +885,8 @@ export const App = () => {
   const [audioDebug, setAudioDebug] = useState('audio: waiting');
   const [captionIndex, setCaptionIndex] = useState(0);
   const [bgShown, setBgShown] = useState<string | null>(null);
+  const [bookPhase, setBookPhase] = useState<'closed' | 'done'>('done');
+  const [screenSize, setScreenSize] = useState({w: 960, h: 540});
   // Width / height of the hero picture, so its box matches its real shape and
   // the feet sit exactly on the floor line (a square box floats wide pictures).
   const [heroAspect, setHeroAspect] = useState(1);
@@ -563,6 +1010,8 @@ export const App = () => {
   const enter = useRef(new Animated.Value(0)).current; // one-time move at the start of each scene
   const drift = useRef(new Animated.Value(0)).current; // background camera drift
   const fade = useRef(new Animated.Value(1)).current; // scene-change fade overlay
+  const bookAnim = useRef(new Animated.Value(0)).current; // 0 = closed book, 1 = open
+  const screenIn = useRef(new Animated.Value(0)).current; // entrance of the pairing / genre / ending screens
 
   // ---- Pairing and drawing polling (unchanged behaviour) -------------------
   useEffect(() => {
@@ -751,6 +1200,7 @@ export const App = () => {
         // pictures will simply load when each scene starts
       }
 
+      resetStageForNewStory();
       setStory(result as Story);
       setSceneIndex(0);
       setScreen('story');
@@ -840,12 +1290,72 @@ export const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, session?.code, story?.id]);
 
+  // Put every animation and picture back to its starting state, so the next
+  // story never shows leftovers of the previous one (this was the flicker).
+  const resetStageForNewStory = () => {
+    fade.setValue(1);
+    drift.setValue(0);
+    enter.setValue(0);
+    setIsStoryPaused(false);
+    setCaptionIndex(0);
+    setBgShown(null);
+    bookAnim.setValue(0);
+    setBookPhase('closed');
+  };
+
   const returnToGenres = () => {
+    resetStageForNewStory();
     setStory(null);
     setSceneIndex(0);
     setErrorMessage('');
     setScreen('genres');
   };
+
+  // ---- Storybook opening: the closed book waits, then swings open ----------
+  useEffect(() => {
+    if (screen !== 'story' || bookPhase !== 'closed') {
+      return;
+    }
+
+    bookAnim.setValue(0);
+
+    const seq = Animated.sequence([
+      Animated.delay(BOOK_HOLD_MS),
+      Animated.timing(bookAnim, {
+        toValue: 1,
+        duration: BOOK_OPEN_MS,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]);
+
+    seq.start(({finished}) => {
+      if (finished) {
+        setBookPhase('done');
+      }
+    });
+
+    return () => seq.stop();
+  }, [screen, bookPhase, story?.id, bookAnim]);
+
+  // ---- Entrance of the pairing / genre / ending screens --------------------
+  useEffect(() => {
+    if (screen === 'story') {
+      return;
+    }
+
+    screenIn.setValue(0);
+
+    const anim = Animated.timing(screenIn, {
+      toValue: 1,
+      duration: 900,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+
+    anim.start();
+    return () => anim.stop();
+  }, [screen, screenIn]);
 
   // ---- Scene change: restart camera drift and fade in ----------------------
   useEffect(() => {
@@ -880,10 +1390,15 @@ export const App = () => {
       return;
     }
 
+    enter.setValue(0);
+
+    // wait until the storybook has opened
+    if (bookPhase !== 'done') {
+      return;
+    }
+
     const motion =
       SCENE_PLAN[Math.min(sceneIndex, SCENE_PLAN.length - 1)].motion;
-
-    enter.setValue(0);
 
     const anim = Animated.timing(enter, {
       toValue: 1,
@@ -894,11 +1409,17 @@ export const App = () => {
 
     anim.start();
     return () => anim.stop();
-  }, [screen, sceneIndex, story?.id, enter]);
+  }, [screen, sceneIndex, story?.id, enter, bookPhase]);
 
   // ---- Narration: one player per scene; the audio drives the story ---------
   useEffect(() => {
-    if (screen !== 'story' || !story || !currentScene || isStoryPaused) {
+    if (
+      screen !== 'story' ||
+      !story ||
+      !currentScene ||
+      isStoryPaused ||
+      bookPhase !== 'done'
+    ) {
       return;
     }
 
@@ -1020,7 +1541,7 @@ export const App = () => {
     // goNext is intentionally omitted: it is recreated every render and this
     // effect already re-runs whenever the scene changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, story?.id, sceneIndex, isStoryPaused]);
+  }, [screen, story?.id, sceneIndex, isStoryPaused, bookPhase]);
 
   // ---- Hero staging for the current scene ----------------------------------
   const plan = SCENE_PLAN[Math.min(sceneIndex, SCENE_PLAN.length - 1)];
@@ -1332,6 +1853,17 @@ const backgroundUri = currentScene?.backgroundUrl
               {backgroundColor: '#100E20', opacity: fade},
             ]}
           />
+
+          {/* Closed storybook that opens to reveal the first scene */}
+          {bookPhase === 'closed' ? (
+            <BookCover
+              progress={bookAnim}
+              pulse={breath}
+              w={stage.w}
+              h={stage.h}
+              title={story.title}
+            />
+          ) : null}
         </View>
       </View>
     );
@@ -1340,8 +1872,22 @@ const backgroundUri = currentScene?.backgroundUrl
   // =========================================================================
   // OTHER SCREENS: pairing, genres, ending
   // =========================================================================
+  const showcaseSource = characterUri
+    ? heroSource
+    : drawingUri
+    ? {uri: drawingUri}
+    : null;
+
   return (
-    <View style={styles.screen}>
+    <View
+      style={styles.screen}
+      onLayout={e => {
+        const {width, height} = e.nativeEvent.layout;
+        setScreenSize(prev =>
+          prev.w === width && prev.h === height ? prev : {w: width, h: height},
+        );
+      }}>
+      <SkyBackdrop w={screenSize.w} h={screenSize.h} />
       <View style={styles.header}>
         <View style={styles.brandMark}>
           <Text style={styles.brandIcon}>✦</Text>
@@ -1357,10 +1903,30 @@ const backgroundUri = currentScene?.backgroundUrl
 
       {screen === 'pairing' && (
         <View style={styles.pairingContent}>
-          <View style={styles.intro}>
-            <Text style={styles.eyebrow}>LET IMAGINATION TAKE FLIGHT</Text>
-            <Text style={styles.welcomeTitle}>
-              Every drawing{'\n'}has a story.
+          <Animated.View
+            style={[
+              styles.intro,
+              {
+                opacity: screenIn.interpolate({
+                  inputRange: [0, 0.6, 1],
+                  outputRange: [0, 1, 1],
+                }),
+                transform: [
+                  {
+                    translateX: screenIn.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-70, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}>
+            <View style={styles.eyebrowPill}>
+              <Text style={styles.eyebrow}>✦  LET IMAGINATION TAKE FLIGHT</Text>
+            </View>
+            <Text style={styles.welcomeTitle}>Every drawing</Text>
+            <Text style={[styles.welcomeTitle, styles.welcomeGold]}>
+              has a story.
             </Text>
             <Text style={styles.description}>
               Bring your little artist's creation to life. Connect a phone,
@@ -1368,17 +1934,24 @@ const backgroundUri = currentScene?.backgroundUrl
             </Text>
 
             {[
-              ['01', 'Connect your phone', 'Scan the QR code to get started.'],
-              ['02', 'Upload your drawing', 'Your artwork becomes the hero.'],
+              ['01', 'Connect your phone', 'Scan the QR code to get started.', '#FF8FB8'],
+              ['02', 'Upload your drawing', 'Your artwork becomes the hero.', '#FFD166'],
               [
                 '03',
                 'Choose an adventure',
                 'Pick a world and let the story begin.',
+                '#5EEAD4',
               ],
             ].map(item => (
               <View style={styles.stepRow} key={item[0]}>
-                <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>{item[0]}</Text>
+                <View
+                  style={[
+                    styles.stepNumber,
+                    {backgroundColor: item[3], borderColor: item[3]},
+                  ]}>
+                  <Text style={[styles.stepNumberText, {color: '#2A1450'}]}>
+                    {item[0]}
+                  </Text>
                 </View>
                 <View style={styles.stepText}>
                   <Text style={styles.stepTitle}>{item[1]}</Text>
@@ -1386,63 +1959,226 @@ const backgroundUri = currentScene?.backgroundUrl
                 </View>
               </View>
             ))}
-          </View>
+          </Animated.View>
 
-          <View style={styles.qrCard}>
-            <Text style={styles.cardTitle}>Connect your phone</Text>
-            <Text style={styles.cardSubtitle}>Scan to begin your story</Text>
-            <View style={styles.qrBox}>
-              {session ? (
-                <Image
-                  source={{uri: session.qrCode}}
-                  style={styles.qrImage}
-                  resizeMode="contain"
+          <Animated.View
+            style={[
+              styles.qrWrap,
+              {
+                opacity: screenIn.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [0, 1, 1],
+                }),
+                transform: [
+                  {
+                    translateY: screenIn.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [80, 0],
+                    }),
+                  },
+                  {
+                    scale: screenIn.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.85, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.qrGlow,
+                {
+                  opacity: breath.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.22, 0.55],
+                  }),
+                  transform: [
+                    {
+                      scale: breath.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 1.05],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+            <View style={styles.qrCard}>
+              <View style={styles.scanPill}>
+                <Text style={styles.scanPillText}>SCAN ME ✦</Text>
+              </View>
+              <Text style={styles.cardTitle}>Connect your phone</Text>
+              <Text style={styles.cardSubtitle}>Scan to begin your story</Text>
+              <View style={styles.qrBox}>
+                {session ? (
+                  <Image
+                    source={{uri: session.qrCode}}
+                    style={styles.qrImage}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <Text style={styles.qrLoading}>Loading QR...</Text>
+                )}
+              </View>
+              <Text style={styles.codeLabel}>YOUR PAIRING CODE</Text>
+              <Text style={styles.code}>{session?.code || '------'}</Text>
+              <View style={styles.connectionRow}>
+                <View
+                  style={[
+                    styles.statusDot,
+                    session?.status === 'paired' && styles.statusDotActive,
+                  ]}
                 />
-              ) : (
-                <Text style={styles.qrLoading}>Loading QR...</Text>
-              )}
+                <Text style={styles.status}>{status}</Text>
+              </View>
             </View>
-            <Text style={styles.codeLabel}>YOUR PAIRING CODE</Text>
-            <Text style={styles.code}>{session?.code || '------'}</Text>
-            <View style={styles.connectionRow}>
-              <View
-                style={[
-                  styles.statusDot,
-                  session?.status === 'paired' && styles.statusDotActive,
-                ]}
-              />
-              <Text style={styles.status}>{status}</Text>
-            </View>
-          </View>
+            <Animated.Image
+              source={FALLBACK_HERO}
+              resizeMode="contain"
+              style={[
+                styles.mascot,
+                {
+                  transform: [
+                    {
+                      translateY: bob.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -10],
+                      }),
+                    },
+                    {
+                      rotate: breath.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['-6deg', '6deg'],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+          </Animated.View>
         </View>
       )}
 
       {screen === 'genres' && (
         <View style={styles.mainContent}>
-          <View style={styles.genreIntro}>
-            <Text style={styles.eyebrow}>YOUR DRAWING IS READY</Text>
-            <Text style={styles.pageTitle}>Start Your Story ✨</Text>
+          <Animated.View
+            style={[
+              styles.genreIntro,
+              {
+                opacity: screenIn.interpolate({
+                  inputRange: [0, 0.6, 1],
+                  outputRange: [0, 1, 1],
+                }),
+                transform: [
+                  {
+                    translateY: screenIn.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-30, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}>
+            <View style={styles.eyebrowPill}>
+              <Text style={styles.eyebrow}>✦  YOUR HERO IS READY!</Text>
+            </View>
+            <Text style={styles.pageTitle}>Pick your adventure ✨</Text>
             <Text style={styles.description}>
               Bring your drawing to life in a magical adventure!
             </Text>
-          </View>
+          </Animated.View>
 
           <View style={styles.genreLayout}>
-            <View style={styles.heroPanel}>
+            <Animated.View
+              style={[
+                styles.heroPanel,
+                {
+                  opacity: screenIn.interpolate({
+                    inputRange: [0, 0.3, 1],
+                    outputRange: [0, 1, 1],
+                  }),
+                  transform: [
+                    {
+                      scale: screenIn.interpolate({
+                        inputRange: [0, 0.6, 1],
+                        outputRange: [0.2, 1.1, 1],
+                      }),
+                    },
+                    {
+                      rotate: screenIn.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['-14deg', '0deg'],
+                      }),
+                    },
+                  ],
+                },
+              ]}>
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.heroSpot,
+                  {
+                    opacity: breath.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.14, 0.3],
+                    }),
+                    transform: [
+                      {
+                        scale: breath.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1, 1.08],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
               <Text style={styles.cardEyebrow}>MEET YOUR LITTLE HERO</Text>
-              {drawingUri ? (
-                <Image
-                  source={{uri: drawingUri}}
-                  style={styles.heroImage}
+              {showcaseSource ? (
+                <Animated.Image
+                  source={showcaseSource}
+                  style={[
+                    styles.heroImage,
+                    {
+                      transform: [
+                        {
+                          translateY: bob.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, -9],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
                   resizeMode="contain"
                 />
               ) : null}
               <Text style={styles.heroCaption}>
                 One drawing. A thousand possibilities.
               </Text>
-            </View>
+              <Burst x="50%" y="45%" delay={450} />
+            </Animated.View>
 
-            <View style={styles.genrePanel}>
+            <Animated.View
+              style={[
+                styles.genrePanel,
+                {
+                  opacity: screenIn.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 1],
+                  }),
+                  transform: [
+                    {
+                      translateY: screenIn.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [70, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}>
               <View style={styles.genreGrid}>
                 <Pressable
                   focusable
@@ -1450,7 +2186,6 @@ const backgroundUri = currentScene?.backgroundUrl
                   disabled={storyLoading}
                   style={({pressed}) => [
                     styles.genreCard,
-                    {backgroundColor: '#45316C'},
                     pressed && styles.genreCardPressed,
                     storyLoading && styles.genreCardDisabled,
                   ]}>
@@ -1459,16 +2194,18 @@ const backgroundUri = currentScene?.backgroundUrl
                   <Text style={styles.genreDescription}>
                     Bring your drawing to life in a magical adventure.
                   </Text>
-                  <Text style={styles.genreAction}>
-                    {storyLoading ? 'Creating...' : 'LET’S BEGIN  ›'}
-                  </Text>
+                  <View style={styles.genreActionPill}>
+                    <Text style={styles.genreAction}>
+                      {storyLoading ? 'CREATING…' : 'LET’S BEGIN  ›'}
+                    </Text>
+                  </View>
                 </Pressable>
               </View>
 
               {errorMessage ? (
                 <Text style={styles.errorText}>{errorMessage}</Text>
               ) : null}
-            </View>
+            </Animated.View>
           </View>
 
           {/* While the story and narration are being prepared */}
@@ -1521,6 +2258,7 @@ const backgroundUri = currentScene?.backgroundUrl
               },
             ]}
           />
+          <Burst x="50%" y="28%" delay={250} />
           <Text style={styles.endingTitle}>The End</Text>
           <Text style={styles.endingText}>
             Every great adventure begins with a little imagination.
@@ -1553,7 +2291,7 @@ const backgroundUri = currentScene?.backgroundUrl
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#100E20',
+    backgroundColor: '#120C3D',
     paddingHorizontal: 48,
     paddingTop: 20,
     paddingBottom: 14,
@@ -1568,12 +2306,12 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: '#B9A0FF',
+    backgroundColor: '#FFD166',
     alignItems: 'center',
     justifyContent: 'center',
   },
   brandIcon: {
-    color: '#100E20',
+    color: '#3A2300',
     fontSize: 23,
     fontWeight: 'bold',
   },
@@ -1666,10 +2404,10 @@ const styles = StyleSheet.create({
   qrCard: {
     width: 290,
     minHeight: 360,
-    borderRadius: 22,
-    backgroundColor: '#211B39',
-    borderWidth: 1,
-    borderColor: '#3E335B',
+    borderRadius: 26,
+    backgroundColor: '#2A1F6B',
+    borderWidth: 3,
+    borderColor: '#FFD166',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
@@ -1757,10 +2495,10 @@ const styles = StyleSheet.create({
   },
   heroPanel: {
     width: '32%',
-    borderRadius: 18,
-    backgroundColor: '#211B39',
-    borderWidth: 1,
-    borderColor: '#3E335B',
+    borderRadius: 22,
+    backgroundColor: '#2A1F6B',
+    borderWidth: 2,
+    borderColor: '#FFD166',
     padding: 15,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1791,12 +2529,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   genreCard: {
-    width: '48%',
-    minHeight: 155,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#FFFFFF20',
-    padding: 13,
+    width: '100%',
+    minHeight: 190,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: '#FFD166',
+    backgroundColor: '#5B34B8',
+    padding: 22,
     justifyContent: 'center',
   },
   genreCardFocused: {
@@ -1815,20 +2554,27 @@ const styles = StyleSheet.create({
   },
   genreTitle: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   genreDescription: {
     color: '#F0EAF9',
-    fontSize: 10,
-    marginTop: 4,
+    fontSize: 12,
+    marginTop: 6,
   },
   genreAction: {
-    color: '#FFFFFF',
-    fontSize: 9,
+    color: '#3A2300',
+    fontSize: 11,
     fontWeight: 'bold',
     letterSpacing: 1,
-    marginTop: 10,
+  },
+  genreActionPill: {
+    alignSelf: 'flex-start',
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#FFD166',
   },
   errorText: {
     color: '#FFB8B8',
@@ -2027,6 +2773,144 @@ const styles = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 1.2,
   },
+  // ---- New look: first page, hero reveal, storybook cover -------------------
+  eyebrowPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginBottom: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,209,102,0.16)',
+  },
+  welcomeGold: {
+    color: '#FFD166',
+    marginBottom: 12,
+  },
+  qrWrap: {
+    width: 290,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qrGlow: {
+    position: 'absolute',
+    left: -16,
+    right: -16,
+    top: -16,
+    bottom: -16,
+    borderRadius: 40,
+    backgroundColor: '#FFD166',
+  },
+  scanPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    marginBottom: 10,
+    borderRadius: 14,
+    backgroundColor: '#FFD166',
+  },
+  scanPillText: {
+    color: '#3A2300',
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+  },
+  mascot: {
+    position: 'absolute',
+    left: -58,
+    bottom: -14,
+    width: 100,
+    height: 100,
+  },
+  heroSpot: {
+    position: 'absolute',
+    width: 230,
+    height: 230,
+    borderRadius: 115,
+    backgroundColor: '#FFD166',
+  },
+  bookPanel: {
+    position: 'absolute',
+    top: 0,
+    backgroundColor: '#2B1D6B',
+  },
+  bookFrameOuter: {
+    position: 'absolute',
+    left: 10,
+    right: 10,
+    top: 10,
+    bottom: 10,
+    borderWidth: 4,
+    borderColor: '#FFD166',
+    borderRadius: 12,
+  },
+  bookFrameInner: {
+    position: 'absolute',
+    left: 28,
+    right: 28,
+    top: 28,
+    bottom: 28,
+    borderWidth: 2,
+    borderColor: 'rgba(255,209,102,0.5)',
+    borderRadius: 8,
+  },
+  bookCorner: {
+    position: 'absolute',
+    color: '#FFD166',
+    fontSize: 26,
+  },
+  bookStarSmall: {
+    position: 'absolute',
+    color: 'rgba(255,209,102,0.45)',
+    fontSize: 20,
+  },
+  bookSpine: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 12,
+    backgroundColor: '#E6A817',
+  },
+  bookMedal: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 5,
+    borderColor: '#FFD166',
+    backgroundColor: '#4B2FB0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bookMedalStar: {
+    color: '#FFD166',
+    fontSize: 56,
+  },
+  bookKicker: {
+    color: '#FFE9A8',
+    fontSize: 12,
+    letterSpacing: 3,
+    marginTop: 14,
+  },
+  bookRibbon: {
+    marginTop: 10,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#C2185B',
+    borderWidth: 2,
+    borderColor: '#FFD166',
+  },
+  bookTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  bookHint: {
+    color: '#D9D2F5',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    marginTop: 12,
+  },
 });
+
 
 export default App;

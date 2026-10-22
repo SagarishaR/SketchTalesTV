@@ -24,6 +24,40 @@ app.use(express.json({limit: '10mb'}));
 app.use('/audio', express.static(AUDIO_DIR));
 app.use('/videos', express.static(VIDEO_DIR));
 app.use(express.static(PUBLIC_DIR));
+const AUDIO_MAX_AGE_MS = 60 * 60 * 1000;
+const AUDIO_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
+
+const PRESERVED_AUDIO_FILES = new Set([
+  'sonican-children-piano-loop-gentle-care-351582.mp3',
+]);
+
+async function cleanupOldAudioFiles() {
+  try {
+    const files = await fs.readdir(AUDIO_DIR, {withFileTypes: true});
+    const now = Date.now();
+
+    for (const file of files) {
+      if (!file.isFile()) continue;
+      if (PRESERVED_AUDIO_FILES.has(file.name)) continue;
+      if (!/\.(mp3|m4a|aiff|aif|wav)$/i.test(file.name)) continue;
+
+      const filePath = path.join(AUDIO_DIR, file.name);
+      const stats = await fs.stat(filePath);
+
+      if (now - stats.mtimeMs > AUDIO_MAX_AGE_MS) {
+        await fs.unlink(filePath);
+        console.log(`[audio-cleanup] Deleted expired file: ${file.name}`);
+      }
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      console.error('[audio-cleanup] Cleanup failed:', error);
+    }
+  }
+}
+
+cleanupOldAudioFiles();
+setInterval(cleanupOldAudioFiles, AUDIO_CLEANUP_INTERVAL_MS).unref();
 
 const upload = multer({
   storage: multer.memoryStorage(),
