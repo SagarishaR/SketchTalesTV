@@ -22,7 +22,7 @@ import {
 // Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
 // Change this one line if the address printed there is different.
 // NOTE: a Cloudflare quick-tunnel address changes every time the tunnel restarts.
-const API_BASE = 'https://antonio-governor-transport-bachelor.trycloudflare.com';
+const API_BASE = 'https://powered-considerable-finance-documented.trycloudflare.com';
 
 // To test the player on its own, paste any https .mp3 link here
 // (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
