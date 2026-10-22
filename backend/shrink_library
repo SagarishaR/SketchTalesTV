@@ -1,0 +1,112 @@
+"""Makes every background picture small and fast (1920x1080 JPEG).
+
+Run from the backend folder (the one that contains server.js):
+    .venv/bin/python shrink_library.py
+
+What it does:
+  1. Copies index.json to index.json.before-jpg (only the first time).
+  2. For every picture listed in index.json: crops to 16:9 if needed,
+     resizes to at most 1920x1080 and saves a .jpg next to the original.
+  3. Points index.json at the new .jpg files.
+Your original PNG files are NOT deleted.
+"""
+import json, os, shutil, sys
+import cv2
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+LIB = os.path.join(HERE, 'public', 'scenes', 'library')
+INDEX = os.path.join(LIB, 'index.json')
+MAX_BYTES = 400 * 1024
+W, H = 1920, 1080
+
+if not os.path.exists(INDEX):
+    sys.exit(f'Cannot find {INDEX}. Run this from the backend folder.')
+
+backup = INDEX + '.before-jpg'
+if not os.path.exists(backup):
+    shutil.copy2(INDEX, backup)
+
+with open(INDEX, encoding='utf-8') as f:
+    data = json.load(f)
+entries = data if isinstance(data, list) else data.get('images', [])
+
+before = after = 0
+converted = skipped = 0
+too_big = []
+cropped = []
+
+for e in entries:
+    key = next((k for k in ('file', 'path', 'url') if e.get(k)), None)
+    if not key:
+        continue
+    value = e[key]
+    prefix = ''
+    rel = value
+    if rel.startswith('/'):
+        rel = rel[1:]
+        prefix = '/'
+    if rel.startswith('scenes/library/'):
+        rel = rel[len('scenes/library/'):]
+        prefix += 'scenes/library/'
+    src = os.path.join(LIB, rel)
+    root, ext = os.path.splitext(src)
+    if not os.path.exists(src):
+        print('MISSING (skipped):', value)
+        skipped += 1
+        continue
+
+    img = cv2.imread(src, cv2.IMREAD_COLOR)
+    if img is None:
+        print('UNREADABLE (skipped):', value)
+        skipped += 1
+        continue
+
+    h, w = img.shape[:2]
+    before += os.path.getsize(src)
+
+    # already a small 16:9 JPEG (for example from an earlier run): leave it
+    if ext.lower() in ('.jpg', '.jpeg') and os.path.getsize(src) <= MAX_BYTES \
+            and w <= W and abs(w / h - W / H) <= 0.01:
+        after += os.path.getsize(src)
+        converted += 1
+        continue
+
+    # centre-crop to 16:9 when the picture is not already 16:9
+    target = W / H
+    if abs(w / h - target) > 0.01:
+        if w / h > target:
+            nw = int(round(h * target)); x0 = (w - nw) // 2
+            img = img[:, x0:x0 + nw]
+        else:
+            nh = int(round(w / target)); y0 = (h - nh) // 2
+            img = img[y0:y0 + nh, :]
+        cropped.append(value)
+        h, w = img.shape[:2]
+
+    if w > W:
+        img = cv2.resize(img, (W, H), interpolation=cv2.INTER_AREA)
+
+    out = root + '.jpg'
+    for quality in (86, 78, 70, 62):
+        cv2.imwrite(out, img, [cv2.IMWRITE_JPEG_QUALITY, quality])
+        if os.path.getsize(out) <= MAX_BYTES:
+            break
+    size = os.path.getsize(out)
+    after += size
+    if size > MAX_BYTES:
+        too_big.append((value, size // 1024))
+
+    new_rel = os.path.splitext(rel)[0] + '.jpg'
+    e[key] = prefix + new_rel
+    converted += 1
+
+with open(INDEX, 'w', encoding='utf-8') as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+
+print(f'Converted {converted} pictures, skipped {skipped}.')
+print(f'Size before: {before / 1e6:.1f} MB   after: {after / 1e6:.1f} MB')
+if cropped:
+    print(f'{len(cropped)} pictures were not 16:9 and were centre-cropped.')
+if too_big:
+    print('Still over 400 KB:', too_big)
+print('index.json now points at the .jpg files. Backup: index.json.before-jpg')

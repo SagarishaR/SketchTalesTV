@@ -22,7 +22,7 @@ import {
 // Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
 // Change this one line if the address printed there is different.
 // NOTE: a Cloudflare quick-tunnel address changes every time the tunnel restarts.
-const API_BASE = 'https://assessments-baptist-shell-brochures.trycloudflare.com';
+const API_BASE = 'https://completed-dimensions-instructor-match.trycloudflare.com';
 
 // To test the player on its own, paste any https .mp3 link here
 // (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
@@ -36,7 +36,7 @@ const USE_VIDEO = false;
 
 // Genres shown on the selection screen. Add 'funny' and 'animals' back
 // once you have matching artwork for them.
-const ENABLED_GENRES = ['magical', 'space'];
+const ENABLED_GENRES = ['magical'];
 
 // Seconds-based fallbacks, in milliseconds.
 const FALLBACK_SCENE_MS = 12000; // used when a scene has no audio or audio fails
@@ -89,21 +89,58 @@ const FALLBACK_HERO = require('../backend/public/scenes/animated-elephant.png');
 // Per-scene staging
 // ---------------------------------------------------------------------------
 
-type Motion = 'walk' | 'hop' | 'pop' | 'celebrate';
+// How the hero acts in each of the 8 story beats:
+//  walkin    - walks in from the side with little steps, then breathes
+//  breathe   - gentle breathing and a small look-around
+//  lean      - leans toward the clue it just found
+//  shake     - a quick worried shake ("Oops!")
+//  tiptoe    - slow careful steps
+//  hop       - a happy hop
+//  jump      - a big jump ("Found it!")
+//  celebrate - happy wobble
+type Motion =
+  | 'walkin'
+  | 'breathe'
+  | 'lean'
+  | 'shake'
+  | 'tiptoe'
+  | 'hop'
+  | 'jump'
+  | 'celebrate';
 
 // x = horizontal centre of the hero (0..1 of stage width)
-// y = where the hero's feet stand (0..1 of stage height)  ← tune per scene
+// y = not used for standing height any more: the picture's floorY decides it
 // h = hero height as a fraction of stage height
-//
-// Tuned so feet sit on the ground line of each background PNG.
-// If a character still floats/sinks, change that scene's y (higher y = lower on screen).
 const SCENE_PLAN: {x: number; y: number; h: number; motion: Motion}[] = [
-  {x: 0.30, y: 0.88, h: 0.28, motion: 'walk'},      // scene 1 – dinosaur valley
-  {x: 0.32, y: 0.86, h: 0.28, motion: 'hop'},       // scene 2 – crystal bell
-  {x: 0.30, y: 0.90, h: 0.26, motion: 'pop'},       // scene 3 – dragon friend
-  {x: 0.34, y: 0.87, h: 0.28, motion: 'hop'},       // scene 4 – gentle wind
-  {x: 0.50, y: 0.89, h: 0.30, motion: 'celebrate'}, // scene 5 – friendship festival
+  {x: 0.30, y: 0.88, h: 0.30, motion: 'walkin'},    // 1  A Happy Start
+  {x: 0.30, y: 0.88, h: 0.30, motion: 'breathe'},   // 2  A Big Mission
+  {x: 0.36, y: 0.88, h: 0.30, motion: 'lean'},      // 3  The First Clue
+  {x: 0.36, y: 0.88, h: 0.30, motion: 'shake'},     // 4  Oops!
+  {x: 0.40, y: 0.88, h: 0.30, motion: 'tiptoe'},    // 5  A Careful Choice
+  {x: 0.46, y: 0.88, h: 0.30, motion: 'hop'},       // 6  The Clues Match
+  {x: 0.50, y: 0.88, h: 0.32, motion: 'jump'},      // 7  Found It!
+  {x: 0.50, y: 0.88, h: 0.32, motion: 'celebrate'}, // 8  Happy Ending
 ];
+
+// Which way does the drawing face? If the hero walks in BACKWARDS
+// (tail first), change this to false.
+const HERO_FACES_RIGHT = true;
+
+// Lets the hero sink a little into the ground so the feet touch it
+// (fraction of the hero's height). 0 = feet exactly on the floor line.
+const FEET_SINK = 0.03;
+
+// How long the one-time entrance move of each scene lasts (milliseconds).
+const ENTER_MS: Record<Motion, number> = {
+  walkin: 2200,
+  breathe: 1000,
+  lean: 1200,
+  shake: 900,
+  tiptoe: 3200,
+  hop: 1000,
+  jump: 1000,
+  celebrate: 1000,
+};
 
 // Set to true while you fine-tune ground positions, then set back to false.
 const SHOW_GROUND_GUIDE = false;
@@ -198,10 +235,14 @@ const genres = ALL_GENRES.filter(g => ENABLED_GENRES.includes(g.id));
 // ---------------------------------------------------------------------------
 
 // A value that eases 0 -> 1 -> 0 forever. Used for bobbing, hopping, walking.
-const useLoop = (halfMs: number) => {
+// runKey: change it to restart the loop. A native-driven value stops when the
+// view using it is removed, so the loop must start again each time the story
+// screen is shown (for example after "New adventure").
+const useLoop = (halfMs: number, runKey: string = '') => {
   const value = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    value.setValue(0);
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(value, {
@@ -220,10 +261,87 @@ const useLoop = (halfMs: number) => {
     );
     loop.start();
     return () => loop.stop();
-  }, [value, halfMs]);
+  }, [value, halfMs, runKey]);
 
   return value;
 };
+
+// Evenly spaced keyframes for a driver that runs 0 -> 1 once (or loops).
+// inputRange is built from the values, so the two lists can never differ in length.
+const kf = (driver: Animated.Value, values: (number | string)[]) =>
+  driver.interpolate({
+    inputRange: values.map((_, i) => i / (values.length - 1)),
+    outputRange: values as number[] | string[],
+  });
+
+// Cuts a scene's narration into short caption lines (one sentence at a time;
+// a very long sentence is cut at a comma or a space near its middle).
+const MAX_CAPTION_CHARS = 90;
+const splitCaptions = (text: string): string[] => {
+  const sentences =
+    String(text || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .match(/[^.!?]+[.!?]+["\u201D']?|[^.!?]+$/g) || [];
+
+  const lines: string[] = [];
+  const cut = (part: string) => {
+    const t = part.trim();
+    if (!t) {
+      return;
+    }
+    if (t.length <= MAX_CAPTION_CHARS) {
+      lines.push(t);
+      return;
+    }
+    const mid = Math.floor(t.length / 2);
+    let at = -1;
+    let best = Infinity;
+    for (let i = 8; i < t.length - 8; i++) {
+      if (t[i] === ',' && Math.abs(i - mid) < best) {
+        best = Math.abs(i - mid);
+        at = i + 1;
+      }
+    }
+    if (at < 0) {
+      for (let i = 8; i < t.length - 8; i++) {
+        if (t[i] === ' ' && Math.abs(i - mid) < best) {
+          best = Math.abs(i - mid);
+          at = i;
+        }
+      }
+    }
+    if (at < 0) {
+      lines.push(t);
+      return;
+    }
+    cut(t.slice(0, at));
+    cut(t.slice(at));
+  };
+
+  sentences.forEach(cut);
+
+  // glue very short pieces ("The end.", a quote tag) to the line before them
+  const merged: string[] = [];
+  lines.forEach(line => {
+    const last = merged.length - 1;
+    if (
+      last >= 0 &&
+      line.length < 18 &&
+      merged[last].length + 1 + line.length <= MAX_CAPTION_CHARS
+    ) {
+      merged[last] = `${merged[last]} ${line}`;
+    } else {
+      merged.push(line);
+    }
+  });
+
+  return merged.length ? merged : [String(text || '')];
+};
+
+// 0, -amp, 0, -amp, ... 0  (n little steps)
+const steps = (n: number, amp: number) =>
+  Array.from({length: n * 2 + 1}, (_, i) => (i % 2 === 1 ? -amp : 0));
 
 type SparkleProps = {x: number; y: number; size: number; delay: number};
 
@@ -320,6 +438,8 @@ export const App = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [stage, setStage] = useState({w: 1200, h: 650});
   const [audioDebug, setAudioDebug] = useState('audio: waiting');
+  const [captionIndex, setCaptionIndex] = useState(0);
+  const [bgShown, setBgShown] = useState<string | null>(null);
   // Width / height of the hero picture, so its box matches its real shape and
   // the feet sit exactly on the floor line (a square box floats wide pictures).
   const [heroAspect, setHeroAspect] = useState(1);
@@ -436,9 +556,11 @@ export const App = () => {
   }, [characterUri]);
 
   // Animation drivers (all native-driven).
-  const bob = useLoop(380); // quick little bounce
-  const beat = useLoop(650); // hop / pop rhythm
-  const slow = useLoop(3200); // slow walk across the scene
+  const loopKey = `${screen}:${story?.id ?? ''}`;
+  const bob = useLoop(380, loopKey); // quick little bounce
+  const beat = useLoop(650, loopKey); // hop / pop rhythm
+  const breath = useLoop(1500, loopKey); // slow breathing
+  const enter = useRef(new Animated.Value(0)).current; // one-time move at the start of each scene
   const drift = useRef(new Animated.Value(0)).current; // background camera drift
   const fade = useRef(new Animated.Value(1)).current; // scene-change fade overlay
 
@@ -607,6 +729,28 @@ export const App = () => {
         throw new Error(result.error || 'Could not create the story');
       }
 
+      // Load all background pictures first, so no scene starts on a black screen.
+      try {
+        const urls: string[] = (result.scenes || [])
+          .map((sc: any) => sc.backgroundUrl)
+          .filter(Boolean)
+          .map((u: string) => `${API_BASE}${u}`);
+        const prefetch = (Image as any).prefetch;
+        if (typeof prefetch === 'function' && urls.length) {
+          setStatus('Painting the pictures...');
+          await Promise.race([
+            Promise.all(
+              urls.map((u: string) =>
+                Promise.resolve(prefetch.call(Image, u)).catch(() => false),
+              ),
+            ),
+            new Promise(resolve => setTimeout(resolve, 6000)),
+          ]);
+        }
+      } catch {
+        // pictures will simply load when each scene starts
+      }
+
       setStory(result as Story);
       setSceneIndex(0);
       setScreen('story');
@@ -730,6 +874,28 @@ export const App = () => {
     return () => intro.stop();
   }, [screen, sceneIndex, story?.id, drift, fade]);
 
+  // ---- Hero entrance move: restarts at the start of every scene ------------
+  useEffect(() => {
+    if (screen !== 'story') {
+      return;
+    }
+
+    const motion =
+      SCENE_PLAN[Math.min(sceneIndex, SCENE_PLAN.length - 1)].motion;
+
+    enter.setValue(0);
+
+    const anim = Animated.timing(enter, {
+      toValue: 1,
+      duration: ENTER_MS[motion],
+      easing: Easing.linear,
+      useNativeDriver: true,
+    });
+
+    anim.start();
+    return () => anim.stop();
+  }, [screen, sceneIndex, story?.id, enter]);
+
   // ---- Narration: one player per scene; the audio drives the story ---------
   useEffect(() => {
     if (screen !== 'story' || !story || !currentScene || isStoryPaused) {
@@ -739,7 +905,41 @@ export const App = () => {
     let active = true;
     let finished = false;
     let player: any = null;
+    let captionTimer: ReturnType<typeof setInterval> | null = null;
     const timers: ReturnType<typeof setTimeout>[] = [];
+
+    // ---- Captions: one short line at a time, following the narration ------
+    const lines = splitCaptions(currentScene.narration);
+    const weights = lines.map(line => line.length + 12);
+    const weightSum = weights.reduce((a, b) => a + b, 0);
+    const estimatedMs = Math.max(3500, weightSum * 62);
+    let captionStart = Date.now();
+    setCaptionIndex(0);
+
+    const startCaptions = () => {
+      captionStart = Date.now();
+      if (captionTimer) {
+        clearInterval(captionTimer);
+      }
+      captionTimer = setInterval(() => {
+        const t = Number(player?.currentTime);
+        const d = Number(player?.duration);
+        const elapsed =
+          isFinite(t) && t > 0 ? t * 1000 : Date.now() - captionStart;
+        const total = isFinite(d) && d > 1 ? d * 1000 : estimatedMs;
+        const progress = Math.min(0.999, elapsed / total);
+        let run = 0;
+        let index = lines.length - 1;
+        for (let i = 0; i < weights.length; i++) {
+          run += weights[i] / weightSum;
+          if (progress < run) {
+            index = i;
+            break;
+          }
+        }
+        setCaptionIndex(prev => (prev === index ? prev : index));
+      }, 200);
+    };
 
     const finish = () => {
       if (!active || finished) {
@@ -751,6 +951,7 @@ export const App = () => {
 
     const startFallbackTimer = () => {
       timers.push(setTimeout(finish, FALLBACK_SCENE_MS));
+      startCaptions();
     };
 
     const onEnded = () => {
@@ -785,6 +986,7 @@ export const App = () => {
           player.autoplay = true;
           await player.play();
           setAudioDebug(`audio: playing ${AUDIO_TEST_URL || url}`);
+          startCaptions();
 
           // Safety net in case neither 'ended' nor 'error' ever fires.
           timers.push(setTimeout(finish, MAX_SCENE_MS));
@@ -801,6 +1003,9 @@ export const App = () => {
     return () => {
       active = false;
       timers.forEach(clearTimeout);
+      if (captionTimer) {
+        clearInterval(captionTimer);
+      }
 
       if (player) {
         try {
@@ -824,90 +1029,110 @@ export const App = () => {
   const heroH = heroW / heroAspect;
   const sceneFloorY = currentScene?.floorY ?? plan.y;
   const heroLeft = plan.x * stage.w - heroW / 2;
-  const heroTop = sceneFloorY * stage.h - heroH;
+  const heroTop = sceneFloorY * stage.h - heroH + heroH * FEET_SINK;
+
+  const dir = HERO_FACES_RIGHT ? 1 : -1;
+  const W = stage.w;
+  const SH = stage.h;
+  const H = heroH;
+
+  // Sideways movement of the hero (the shadow uses the same value).
+  const shiftX = (): any => {
+    switch (plan.motion) {
+      case 'walkin':
+        return kf(
+          enter,
+          [-0.3, -0.21, -0.14, -0.085, -0.045, -0.018, 0].map(v => v * W * dir),
+        );
+      case 'tiptoe':
+        return kf(enter, [0, W * 0.07 * dir]);
+      case 'shake':
+        return kf(
+          enter,
+          [0, -10, 10, -10, 10, -6, 6, -3, 3, 0, 0].map(v => (v * W) / 1000),
+        );
+      case 'lean':
+        return kf(enter, [0, W * 0.015 * dir]);
+      default:
+        return 0;
+    }
+  };
+
+  // Soft breathing that keeps the feet on the ground.
+  const breathing = (): any[] => [
+    {translateY: kf(breath, [0, -H * 0.015])},
+    {scaleY: kf(breath, [1, 1.03])},
+    {scaleX: kf(breath, [1, 0.985])},
+  ];
 
   const heroTransform = (): any[] => {
     switch (plan.motion) {
-      case 'walk':
+      case 'walkin': {
+        const tilt = steps(6, 3).map((_, i) =>
+          i % 2 === 0 ? '0deg' : `${i % 4 === 1 ? 3 : -3}deg`,
+        );
         return [
-          {
-            translateX: slow.interpolate({
-              inputRange: [0, 1],
-              outputRange: [-stage.w * 0.12, stage.w * 0.12],
-            }),
-          },
-          {
-            translateY: bob.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -8],
-            }),
-          },
-          {
-            rotate: bob.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['-3deg', '3deg'],
-            }),
-          },
+          {translateX: shiftX()},
+          {translateY: kf(enter, steps(6, 9))},
+          {rotate: kf(enter, tilt)},
+          ...breathing(),
+        ];
+      }
+      case 'breathe':
+        return [{rotate: kf(breath, ['-2deg', '2deg'])}, ...breathing()];
+      case 'lean':
+        return [
+          {translateX: shiftX()},
+          {rotate: kf(enter, ['0deg', `${6 * dir}deg`])},
+          ...breathing(),
+        ];
+      case 'shake': {
+        const xs = [0, -10, 10, -10, 10, -6, 6, -3, 3, 0, 0];
+        return [
+          {translateX: shiftX()},
+          {rotate: kf(enter, xs.map(v => `${(v * 0.3).toFixed(1)}deg`))},
+          {scale: kf(enter, xs.map((_, i) => (i > 0 && i < 8 ? 1.04 : 1)))},
+          ...breathing(),
+        ];
+      }
+      case 'tiptoe':
+        return [
+          {translateX: shiftX()},
+          {translateY: kf(enter, steps(4, 5))},
+          ...breathing(),
         ];
       case 'hop':
         return [
-          {
-            translateY: beat.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -stage.h * 0.14],
-            }),
-          },
-          {
-            scaleY: beat.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.94, 1.06],
-            }),
-          },
-          {
-            scaleX: beat.interpolate({
-              inputRange: [0, 1],
-              outputRange: [1.05, 0.96],
-            }),
-          },
+          {translateY: kf(beat, [H * 0.03, -SH * 0.14 - H * 0.03])},
+          {scaleY: kf(beat, [0.94, 1.06])},
+          {scaleX: kf(beat, [1.05, 0.96])},
         ];
-      case 'pop':
+      case 'jump':
         return [
-          {
-            translateY: bob.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -6],
-            }),
-          },
-          {
-            scale: beat.interpolate({
-              inputRange: [0, 1],
-              outputRange: [1, 1.14],
-            }),
-          },
+          {translateY: kf(beat, [H * 0.04, -SH * 0.24 - H * 0.05])},
+          {scaleY: kf(beat, [0.92, 1.1])},
+          {scaleX: kf(beat, [1.08, 0.94])},
+          {rotate: kf(beat, ['-4deg', '4deg'])},
         ];
       default:
         return [
-          {
-            translateY: beat.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -stage.h * 0.06],
-            }),
-          },
-          {
-            rotate: beat.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['-8deg', '8deg'],
-            }),
-          },
+          {translateY: kf(beat, [0, -SH * 0.06])},
+          {rotate: kf(beat, ['-8deg', '8deg'])},
           {scale: 1.05},
         ];
     }
   };
 
-  const heroSource = characterUri ? {uri: characterUri} : FALLBACK_HERO;
+  const heroJumping =
+    plan.motion === 'hop' ||
+    plan.motion === 'jump' ||
+    plan.motion === 'celebrate';
 
-const backgroundSource = currentScene?.backgroundUrl
-  ? {uri: `${API_BASE}${currentScene.backgroundUrl}`}
+  const heroSource = characterUri ? {uri: characterUri} : FALLBACK_HERO;
+  const captionLines = splitCaptions(currentScene?.narration || '');
+
+const backgroundUri = currentScene?.backgroundUrl
+  ? `${API_BASE}${currentScene.backgroundUrl}`
   : null;
 
   // =========================================================================
@@ -918,24 +1143,45 @@ const backgroundSource = currentScene?.backgroundUrl
       <View style={styles.storyRoot}>
         <View
           style={styles.stage}
-          onLayout={e =>
-            setStage({
-              w: e.nativeEvent.layout.width,
-              h: e.nativeEvent.layout.height,
-            })
-          }>
+          onLayout={e => {
+  const {width, height} = e.nativeEvent.layout;
+  setStage(prev =>
+    prev.w === width && prev.h === height
+      ? prev
+      : {w: width, h: height},
+  );
+}}
+          >
+          {/* Pictures of all scenes load in the background (invisible) */}
+          {story.scenes.map((sc: any, i: number) =>
+            sc.backgroundUrl ? (
+              <Image
+                key={`pre-${i}-${sc.backgroundUrl}`}
+                source={{uri: `${API_BASE}${sc.backgroundUrl}`}}
+                style={{position: 'absolute', width: 1, height: 1, opacity: 0}}
+              />
+            ) : null,
+          )}
+
+          {/* Previous picture stays visible until the new one has loaded */}
+          {bgShown && bgShown !== backgroundUri ? (
+            <Image
+              source={{uri: bgShown}}
+              resizeMode="contain"
+              style={{position: 'absolute', width: '100%', height: '100%'}}
+            />
+          ) : null}
+
           {/* Background: full stage, keep aspect ratio (no stretch zoom) */}
-   {backgroundSource && (
-  <Image
-    source={backgroundSource}
-    resizeMode="contain"
-    style={{
-      position: 'absolute',
-      width: '100%',
-      height: '100%',
-    }}
-  />
-)}
+          {backgroundUri ? (
+            <Image
+              key={backgroundUri}
+              source={{uri: backgroundUri}}
+              resizeMode="contain"
+              onLoad={() => setBgShown(backgroundUri)}
+              style={{position: 'absolute', width: '100%', height: '100%'}}
+            />
+          ) : null}
 
           {/* Twinkling sparkles */}
           {SPARKS.map((spark, i) => (
@@ -950,34 +1196,11 @@ const backgroundSource = currentScene?.backgroundUrl
                 width: heroW * 0.55,
                 left: plan.x * stage.w - (heroW * 0.55) / 2,
                 top: sceneFloorY * stage.h - 8,
-                opacity:
-                  plan.motion === 'hop' || plan.motion === 'celebrate'
-                    ? beat.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.35, 0.15],
-                      })
-                    : 0.3,
-                transform:
-                  plan.motion === 'walk'
-                    ? [
-                        {
-                          translateX: slow.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [-stage.w * 0.12, stage.w * 0.12],
-                          }),
-                        },
-                      ]
-                    : [
-                        {
-                          scaleX:
-                            plan.motion === 'hop'
-                              ? beat.interpolate({
-                                  inputRange: [0, 1],
-                                  outputRange: [1, 0.7],
-                                })
-                              : 1,
-                        },
-                      ],
+                opacity: heroJumping ? kf(beat, [0.35, 0.12]) : 0.3,
+                transform: [
+                  {translateX: shiftX()},
+                  {scaleX: heroJumping ? kf(beat, [1, 0.65]) : 1},
+                ],
               },
             ]}
           />
@@ -994,9 +1217,7 @@ const backgroundSource = currentScene?.backgroundUrl
           ) : null}
 
           {/* The child's drawing, as the hero */}
-          <Animated.Image
-            source={heroSource}
-            resizeMode="contain"
+          <Animated.View
             style={{
               position: 'absolute',
               width: heroW,
@@ -1004,8 +1225,17 @@ const backgroundSource = currentScene?.backgroundUrl
               left: heroLeft,
               top: heroTop,
               transform: heroTransform(),
-            }}
-          />
+            }}>
+            <Image
+              source={heroSource}
+              resizeMode="contain"
+              style={{
+                width: '100%',
+                height: '100%',
+                transform: [{scaleX: HERO_FACES_RIGHT ? 1 : -1}],
+              }}
+            />
+          </Animated.View>
 
           {/* Temporary ground guide – remove when positions look correct */}
           {SHOW_GROUND_GUIDE ? (
@@ -1082,13 +1312,17 @@ const backgroundSource = currentScene?.backgroundUrl
               color: '#FFE08A',
               fontSize: 14,
             }}>
-            {isStoryPaused ? 'PAUSED · show open palm to resume' : audioDebug}
+            {isStoryPaused ? 'PAUSED · show open palm to resume' : ''}
           </Text>
 
-          {/* Big caption bar */}
-          <View style={styles.captionBar}>
-            <Text style={styles.captionText}>{currentScene.narration}</Text>
-          </View>
+          {/* Small caption: one short line at a time */}
+          {captionLines[Math.min(captionIndex, captionLines.length - 1)] ? (
+            <View style={styles.captionBar} pointerEvents="none">
+              <Text style={styles.captionText} numberOfLines={2}>
+                {captionLines[Math.min(captionIndex, captionLines.length - 1)]}
+              </Text>
+            </View>
+          ) : null}
 
           {/* Fade-in overlay on every scene change */}
           <Animated.View
@@ -1706,18 +1940,18 @@ const styles = StyleSheet.create({
   },
   captionBar: {
     position: 'absolute',
-    left: SAFE,
-    right: SAFE,
-    bottom: SAFE,
-    paddingHorizontal: 20,
-    paddingVertical: 7,
+    left: '14%',
+    right: '14%',
+    bottom: SAFE * 0.6,
+    paddingHorizontal: 18,
+    paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: '#100E20CC',
+    backgroundColor: '#100E20A6',
   },
   captionText: {
     color: '#FFFFFF',
-    fontSize: 18,
-    lineHeight: 23,
+    fontSize: 20,
+    lineHeight: 26,
     textAlign: 'center',
   },
 
