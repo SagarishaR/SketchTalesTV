@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 
-const API_BASE = 'https://flag-consequence-duplicate-scientists.trycloudflare.com';
+const API_BASE = 'https://sketchtalestv.onrender.com';
 
 const AUDIO_TEST_URL = '';
 const LOCAL_SCENE_VIDEO = `${API_BASE}/scenes/complete-crystal-bell-story.mp4`;
