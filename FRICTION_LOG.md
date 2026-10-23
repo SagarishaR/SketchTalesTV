@@ -1,158 +1,100 @@
-# SketchTales TV — Friction Log
+# Friction Log: SketchTales TV
 
-## Overview
+Project: SketchTales TV, built for **Build, Ship, Shape: Amazon Developer Hackathon** (Fire TV track, Vega OS, AWS Builder mini challenge).
 
-| ID | Area | Issue | Status |
-|---|---|---|---|
-| FL-001 | Audio playback | MP3 loaded but no sound played in the Vega simulator | Resolved with a manifest change; exact root cause unconfirmed |
-| FL-002 | Drawing upload and display | Uploaded drawing needed additional API integration to appear on the TV | Resolved and tested |
-| FL-003 | OpenCV character extraction | Background removal and large photo cutouts needed debugging and resizing | Prototype works; generalization pending |
-| FL-004 | TV background rendering | Background sizing and stage dimensions needed adjustment to preserve image proportions and character positioning | Resolved and tested in the current simulator setup |
+**Severity scale:** **Blocker** = stopped the feature until solved. **High** = cost serious time or forced a design change. **Medium** = confusing, solved with effort. **Low** = annoyance.
 
----
+| # | Tool                          | Problem                                                                  | Severity |
+|---|-------------------------------|--------------------------------------------------------------------------|----------|
+| F1 | Amazon Bedrock               | "Operation not allowed" from CLI/SDK while the console playground worked | Blocker  |
+| F2 | Amazon Bedrock (Nova 2 Lite) | Model sometimes ignores the "mention something from the picture" rule    | Medium   |
+| F3 | Amazon Bedrock (Nova 2 Lite) | About 4-5 s to write 8 scenes                                            | Low      |
+| F4 | DynamoDB                     | `update-time-to-live` errors when TTL is already on                      | Low      |
+| F5 | AWS CLI                      | Pager made finished output look unfinished                               | Low      |
+| F6 | Vega OS / React Native       | Video surface covered the background pictures                            | High     |
+| F7 | Vega OS                      | Camera not supported, so hand tracking moved to a phone web page         | High     |
 
-## FL-001: Vega simulator audio playback failure
-
-**Task attempted:** Verify that the Vega app can play an MP3 from a URL for story narration.
-
-**Steps taken:**
-
-1. Installed `@amazon-devices/react-native-w3cmedia`.
-2. Created an audio feasibility test using `AudioPlayer`.
-3. Built, installed, and launched the app on the Vega simulator.
-4. Confirmed that the app loaded the MP3 source but no sound was audible.
-5. Added audio service declarations to `manifest.toml`.
-6. Rebuilt and reinstalled the app.
-
-**Expected result:** The MP3 should play audibly in the Vega simulator.
-
-**Actual result:** Initially, no sound was audible and the app displayed media error code 4. After adding the audio service declarations and rebuilding, audio became audible. The exact root cause has not been isolated.
-
-**Severity:** High — audio narration is a core requirement of SketchTales TV.
-
-**Workaround used:** Added audio service declarations to the manifest, rebuilt the app, and reinstalled it.
-
-**Actionable suggestion:** Provide a minimal, tested Vega audio-playback example that includes the required manifest declarations, supported media formats, and troubleshooting guidance for media error codes.
 
 ---
 
-## FL-002: Getting drawing uploads working between phone and TV
+## F1. Bedrock: "Operation not allowed" from CLI and SDK, console works
 
-**Task attempted:** Allow a user to connect a phone to SketchTales TV, upload a child's drawing, and see the same drawing displayed on the TV.
+- **Task attempted:** Call Amazon Nova 2 Lite from our Node.js server to write story narration.
+- **Steps taken:**
+  1. Opened the Bedrock console playground in `ap-southeast-2`, chose Nova 2 Lite, sent a prompt. It worked and returned a story.
+  2. In the terminal (IAM role session `AccountFullAccessRole`), ran:
+     `aws bedrock-runtime converse --region ap-southeast-2 --model-id global.amazon.nova-2-lite-v1:0 --messages '[{"role":"user","content":[{"text":"Say hi in five words"}]}]'`
+  3. Repeated with `--model-id amazon.nova-2-lite-v1:0`.
+  4. Ran our Node smoke test (`node bedrockStory.js`), which uses the AWS SDK for JavaScript v3 `ConverseCommand`.
+- **Expected:** The same model that answers in the console answers from the CLI/SDK, or the error says what is missing.
+- **Actual:** Every call returned `ValidationException: Operation not allowed`, for both model IDs, from both the CLI and the SDK. The message names no account, role, model-access or region problem. (The first account we tried gave the same message in the playground itself.)
+- **Severity:** Blocker at the time. It held up testing until the workaround below.
+- **Status: resolved.** Bedrock now works fully in our app: Nova 2 Lite writes the narration for every story, and the code path has been run live many times.
+- **Workaround:** Created a **Bedrock API key** on the console's API keys page and exported it as `AWS_BEARER_TOKEN_BEDROCK` in the terminal. The same CLI command then succeeded (646 ms). Our app also has a local-story fallback, so the demo kept working while we sorted this out.
+- **Root cause:** Not identified. We do not know why the role credentials were refused while the console and the API key were accepted.
+- **Suggestion:** Return an error that says which check failed (account state, model access, role policy, Marketplace subscription, region) with a link to the fix. `ValidationException` is the wrong class for an access problem. Document the API-key path in the Converse quickstart as the fastest way to a working call.
 
-**What happened:**
 
-I started by testing the upload endpoint with a small PNG image. The upload and retrieval worked, but the test image was only 1 × 1 pixel, so it was not useful for checking the actual drawing display.
+## F2. Nova 2 Lite: sometimes ignores the grounding rule
 
-I then updated the phone page to support image selection, preview, and upload. During testing, I initially could not see the upload section until I refreshed the page and scrolled down.
+- **Task attempted:** Make narration match the local background picture of each scene. We send each scene's plot beat plus the picture's landmark list and ask for JSON with one narration per scene that mentions something from that list.
+- **Steps taken:** Four real runs of the smoke test (`node bedrockStory.js`) against Nova 2 Lite.
+- **Expected:** Every scene's text mentions something in its picture.
+- **Actual:** The JSON parsed in 4 of 4 runs, which was good. But in several runs 1-3 scenes did not follow the rule (for example the text said "arch" while the rule check expected another landmark word, or it wrote about the plot instead of the picture). In one run the model correctly refused to write about a treasure chest in a crystal-bell story, which exposed a wrong picture tag on our side, not a model fault.
+- **Severity:** Medium.
+- **Workaround:** A validator checks length, banned words, weather words underwater, and that each scene mentions a landmark of its picture. One failed scene keeps its local text; more than two failed scenes triggers one retry; if that fails the whole story uses the local generator.
+- **Suggestion:** Document a recommended pattern for guaranteed structured output with Nova 2 Lite on Converse (schema-constrained output or tool use), with a worked example that includes validation and retry. If schema-constrained output already exists for this model, surface it in the Converse quickstart.
 
-The backend could receive the image, but the TV only checked whether a drawing had been uploaded. I had to add another API request so the TV could retrieve the actual image.
+## F3. Nova 2 Lite: latency for an 8-scene rewrite
 
-While integrating the display logic, I also encountered a JSX parenthesis mismatch that stopped the app from building.
+- **Task attempted:** Rewrite all 8 scenes in one Converse call during story generation.
+- **Steps taken:** Timed the call in four runs.
+- **Expected:** Under about 2 s.
+- **Actual:** 4.2 to 4.8 s per call (4348, 4201, 4840, 4315 ms). A tiny test prompt took 646 ms, so the time scales with output length.
+- **Severity:** Low. It sits inside our "your hero is getting ready" loading screen.
+- **Workaround:** One call for all 8 scenes (not 8 calls), 20 s timeout, local fallback.
+- **Suggestion:** None for the model. A docs example of streaming one scene at a time (`ConverseStream`) would help; we did not try it.
 
-**How I resolved it:**
 
-1. Added Multer-based uploads with an 8 MB size limit and JPEG/PNG validation.
-2. Added an API endpoint to retrieve the uploaded drawing.
-3. Updated the phone page to select, preview, and upload images.
-4. Updated the TV app to poll for new uploads, retrieve the image, and display it.
-5. Corrected the JSX syntax and rebuilt the app.
-6. Tested the flow using an actual drawing image.
+## F4. DynamoDB: `update-time-to-live` is not idempotent
 
-**Expected result:** The phone should upload a drawing, and the TV should retrieve and display the same image.
+- **Task attempted:** Enable TTL on `ttl`.
+- **Steps taken:** Re-ran `aws dynamodb update-time-to-live --table-name sessions --time-to-live-specification Enabled=true,AttributeName=ttl`.
+- **Expected:** Success with no change.
+- **Actual:** `ValidationException: TimeToLive is already enabled`.
+- **Severity:** Low.
+- **Workaround:** Ignore the error.
+- **Suggestion:** Return success when the requested state already holds, so setup scripts can be re-run.
 
-**Actual result:** The upload succeeded, and the drawing appeared on the Vega simulator. The end-to-end phone-to-TV drawing flow is working.
+## F5. AWS CLI: pager made finished output look unfinished
 
-**Severity:** High — transferring and displaying the child's drawing is essential to the core experience.
+- **Task attempted:** Read the output of `aws dynamodb create-table`.
+- **Steps taken:** Ran the command in the VS Code integrated terminal.
+- **Expected:** Output ends and the prompt returns.
+- **Actual:** The output opened in a pager (`less`), with rows of `~` and a missing prompt. It looked as if the command had stopped halfway. The command had finished.
+- **Severity:** Low.
+- **Workaround:** `export AWS_PAGER=""` (or press `q`).
+- **Suggestion:** Do not page short outputs, or show a "press q" hint in the pager footer.
 
-**Workaround used:** Added a dedicated drawing retrieval endpoint and connected it to the TV's polling logic.
+## F6. Vega OS: video surface covers the background pictures
 
-**Actionable suggestion:** Provide an end-to-end Vega example covering mobile image uploads, multipart requests, image retrieval, and React Native image rendering, with troubleshooting guidance for common integration errors.
+- **Task attempted:** Play a generated MP4 of each scene on the Vega Virtual Device, with the library background and the hero drawing layered on screen.
+- **Steps taken:** [CONFIRM: add the exact component and layering you used, and what you saw]
+- **Expected:** Video and React Native layers composite in the order we set.
+- **Actual:** The video surface drew over the background pictures. [CONFIRM: add the exact symptom]
+- **Severity:** High. It made us drop the video path.
+- **Workaround:** Disabled the MP4 path (`USE_VIDEO = false`). The TV now shows the background picture, the child's cut-out hero animated with React Native `Animated`, a shadow, sparkles, captions and narration audio.
+- **Suggestion:** [CONFIRM: your suggestion]. At minimum, document how the video surface layers with other views on Vega.
 
-**Remaining limitations:** Drawings are currently stored in backend memory and transferred as Base64 data. Persistent storage, image preprocessing, and hero cutout were still pending at this stage of development.
+## F7. Vega OS: no camera support, so hand tracking moved to a phone web page
 
----
+- **Task attempted:** Let the child control the story with hand gestures (pause, next, previous, restart), using a camera and hand tracking inside the Vega TV app.
+- **Steps taken:** Looked for a way to open a camera from the React Native app on Vega OS. [CONFIRM: add what you tried or the docs page/error you found]
+- **Expected:** A supported camera API in the Vega SDK / Vega Virtual Device, as on phones.
+- **Actual:** Camera access is not supported on Vega OS, so hand tracking could not run in the TV app.
+- **Severity:** High. It forced a change in the design.
+- **Workaround:** The phone's web page (`phone.html`) opens the camera and runs MediaPipe hand tracking on the phone. It sends only text events (`open_palm`, `swipe_left`, `swipe_right`, `thumbs_up`) to the server, and the TV app polls for them every 400 ms. The remote always works too. A side benefit: video never leaves the phone, which suits a children's app.
+- **Suggestion:** State clearly in the Vega docs which hardware APIs (camera, microphone) are supported. If camera support is planned, say so, and offer a documented pattern (such as a companion phone) for apps that need it.
 
-## FL-003: OpenCV character extraction and oversized cutout
 
-**Task attempted:** Remove the paper background from an uploaded drawing and prepare a transparent character PNG for story-scene composition.
 
-**What happened:**
-
-I installed OpenCV and NumPy in a dedicated Python virtual environment under `backend/.venv`. I first tested extraction using a 680 × 680 cartoon elephant image. The initial diagnostic reported 0% transparency, so I investigated the flood-fill mask and corrected the extraction script.
-
-The corrected approach identified white regions connected to the image border as background while preserving enclosed white regions inside the elephant. A preview on a contrasting purple background showed that the elephant's main shape and white interior were preserved. The source watermark remained in the image.
-
-I then created a reusable Python extraction script and a Node.js helper that invokes it through a subprocess. The Node-to-Python bridge successfully generated a transparent PNG.
-
-During end-to-end testing, a photograph uploaded from the phone measured 3072 × 4080 pixels. The resulting cutout was approximately 16 MB, and its Base64 API response was about 20.6 million characters. This was too large for an efficient TV story pipeline.
-
-**How I resolved it:**
-
-1. Created an isolated Python virtual environment and installed OpenCV and NumPy.
-2. Developed and tested a flood-fill-based background-removal script.
-3. Added a Node.js-to-Python processing bridge.
-4. Integrated processing into the drawing-upload endpoint and added a separate cutout retrieval endpoint.
-5. Limited the longest output dimension to 1024 pixels and enabled PNG compression.
-6. Re-uploaded a drawing and verified that the processed output measured 771 × 1024 pixels and was approximately 653 KB.
-
-**Expected result:** Uploaded drawings should produce transparent PNG assets that can later be composited onto story backgrounds without displaying the cutout as a separate screen on the TV.
-
-**Actual result:** The processing pipeline and cutout endpoint work, and resizing reduced the tested output from approximately 16 MB to 653 KB. The phone-to-TV flow continued to display the original photograph.
-
-**Severity:** High — character extraction is a key part of preserving the child's artwork in generated story scenes.
-
-**Remaining limitations:**
-
-- The extraction approach works best with near-white backgrounds and sufficiently enclosed outlines.
-- The tested source image still contains a watermark.
-- Photographs with shadows, colored paper, gaps in outlines, or surrounding screen/laptop backgrounds may produce inaccurate cutouts.
-- The output has not yet been validated against a diverse set of real drawings.
-- The backend stores images in memory as Base64 data, so they are lost when the backend restarts.
-- The TV had not yet consumed the cutout for scene composition at the time of the initial extraction tests.
-
-**Next action:** Validate extraction on varied drawings, improve image validation and background removal, and use the cutout as an internal asset in the story-scene composition pipeline.
-
----
-
-## FL-004: TV story background rendering and stage sizing
-
-**Task attempted:** Ensure story backgrounds fit the Vega TV stage correctly without distortion, while preserving character positioning and animation.
-
-**What happened:**
-
-During story playback testing, the stage dimensions and background rendering needed further adjustment. The stage was initially initialized with fixed dimensions of 1200 × 650 pixels. Since the actual TV layout can differ, the rendering logic needed to account for the stage's measured dimensions.
-
-The background images were also being rendered using `resizeMode="stretch"`, which could distort images when their aspect ratio differed from the TV stage. The scene backgrounds were mapped directly in `src/App.tsx`, while the separate background-generation script was not integrated into the current rendering flow.
-
-**How I resolved it:**
-
-1. Used React Native's `onLayout` to obtain the actual stage width and height.
-2. Stored the measured dimensions in the stage state and used them in the rendering and character-positioning calculations.
-3. Updated the background rendering to use an absolutely positioned image with `resizeMode="contain"`.
-4. Rebuilt and tested the app in the Vega virtual TV simulator.
-5. Verified that the background rendering, character animation, and scene transitions worked as expected.
-
-**Expected result:** Story backgrounds should fit the TV stage without distortion, while character positioning, animation, and scene transitions remain functional.
-
-**Actual result:** The updated rendering works correctly in the tested simulator setup. Background display, character animation, and scene transitions are working as expected.
-
-**Severity:** Medium — incorrect background sizing can affect the visual quality and presentation of the story.
-
-**Workaround used:** Used dynamically measured stage dimensions and aspect-ratio-preserving image rendering instead of stretching backgrounds.
-
-**Remaining limitations:**
-
-- The `contain` resize mode may leave unused space when the background and stage have different aspect ratios.
-- The current scene-background rendering does not automatically generate new backgrounds for each story.
-- Layout behavior should be validated on additional supported TV resolutions and aspect ratios.
-
-**Next action:** Preserve the current working implementation, validate the rendering on other screen sizes if available, and investigate integrating story-specific backgrounds into the existing scene-generation pipeline.
-
----
-
-## Notes
-
-This log records issues encountered during development, the steps taken to resolve them, and the limitations that remain. The observations are based on testing performed during the SketchTales TV implementation.
-
-Resolved issues are retained for traceability. Remaining limitations describe the state of the implementation and may change as development progresses.
