@@ -1,8 +1,8 @@
 <h1 align="center">SketchTales 🎨📺</h1>
 
-<p align="center"><strong>Your child draws. The TV tells the story.</strong></p>
+<p align="center"><strong>Every child's imagination is a world. We bring it to life.</strong></p>
 
-<p align="center"><strong>A child draws a character on paper. A parent scans a QR code and uploads it. SketchTales TV turns that drawing into the hero of an AI-narrated adventure on the big screen.</strong></p>
+<p align="center"><strong>A child draws a character. A parent scans a QR code and uploads it. SketchTales TV brings that character to life as the hero of its own narrated adventure on the big screen.</strong></p>
 
 <p align="center">
   <a href="https://aws.amazon.com/bedrock/"><img src="https://img.shields.io/badge/Amazon-Bedrock-FF9900?logo=amazonaws&logoColor=white" alt="Amazon Bedrock"></a>
@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/License-MIT-blue" alt="MIT License">
 </p>
 
-<p align="center">Built for the <strong>Build, Ship, Shape: Amazon Developer Hackathon</strong><br>
+<p align="center">
 Track: <strong>Fire TV (Vega OS, React Native)</strong> · Mini Challenge: <strong>AWS Builder</strong></p>
 
 ---
@@ -23,27 +23,25 @@ Track: <strong>Fire TV (Vega OS, React Native)</strong> · Mini Challenge: <stro
 
 | | |
 |---|---|
-| 📱 **Phone companion** | [sketchtalestv.onrender.com/phone.html](https://sketchtalestv.onrender.com/phone.html) |
-| ⚙️ **Live backend** | [sketchtalestv.onrender.com](https://sketchtalestv.onrender.com) · [health check](https://sketchtalestv.onrender.com/health) |
 | 🎥 **Demo video** | _Add your video link here_ |
 | 📓 **Development journey** | [Friction Log](FRICTION_LOG.md) |
 
-> The TV experience runs on **Fire TV (Vega OS)**. The phone companion opens in any modern mobile browser and needs camera permission for gesture control.
-
 ---
 
-## ✨ Introducing SketchTales TV
+## ✨ Introducing SketchTales 
 
-Children create amazing characters on paper, but their drawings usually stay on the page.
+Every child carries a whole world in their head: a dragon who is afraid of the dark, a robot who loves to bake, a cat who flies to the moon. A crayon is the first way they let those ideas out.
 
-SketchTales TV gives those characters a starring role. There are no prompts to type and no imaginary worlds to describe: it starts with something the child has already made. Computer vision, generative AI and speech synthesis turn a physical drawing into an interactive, narrated story on the television.
+SketchTales is how those ideas step out and start moving. A child draws a character, and it comes alive on the television, walking through magical worlds, facing a quest and being cheered on by a narrator who tells its story. There is nothing to type and no world to describe. The child's own imagination is the starting point, and the child's own character is the star.
+
+Behind the magic, computer vision lifts the character off the page, generative AI writes the narration, and speech synthesis gives the story a voice.
 
 <!-- Replace with a screenshot or GIF of the TV experience -->
 <!-- ![SketchTales TV demo](docs/demo.gif) -->
 
 ### What makes it different
 
-- **The child's own art is the hero.** The real drawing is extracted and animated inside the story.
+- **Imagination comes alive.** The child's real drawing, with its own wobbly lines and colors, becomes the living hero of the story. Nothing is replaced by a stock character.
 - **Hybrid AI design.** A deterministic story engine controls the plot. Amazon Bedrock writes the narration, grounded in the selected illustration. Output is validated, with local fallback if a request fails.
 - **Two screens, one experience.** The TV shows the story while the parent's phone handles uploads and camera-based gestures.
 - **Child-friendly by design.** No accounts, no typing, a parent-consent screen, and gesture events sent as text rather than video.
