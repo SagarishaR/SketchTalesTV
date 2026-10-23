@@ -6,7 +6,7 @@ const path = require('node:path');
 // Runs one of the Python scripts in this folder with the project's virtual environment.
 function runPython(scriptName, args) {
   return new Promise((resolve, reject) => {
-    const pythonPath = path.join(__dirname, '.venv', 'bin', 'python');
+    const pythonPath = process.env.PYTHON_PATH || (process.platform === 'win32' ? 'python' : 'python3');
     const scriptPath = path.join(__dirname, scriptName);
 
     const child = spawn(pythonPath, [scriptPath, ...args]);
