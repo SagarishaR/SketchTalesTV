@@ -55,11 +55,10 @@ Behind the magic, computer vision lifts the character off the page, generative A
 | 1. **Pair** | The TV shows a QR code and a six-digit pairing code. |
 | 2. **Upload** | A parent scans the code, accepts the consent screen and uploads a photo of the drawing. |
 | 3. **Extract** | Python and OpenCV separate the character from the paper background. |
-| 4. **Choose** | The child picks a story genre, such as a magical adventure. |
-| 5. **Build** | A local story engine creates an eight-scene plot. A background matcher picks illustrations from the app's library. |
-| 6. **Narrate with AI** | Amazon Bedrock writes short, scene-specific narration grounded in the chosen illustration. |
-| 7. **Speak** | Amazon Polly generates the voice, mixed with background music using FFmpeg. |
-| 8. **Interact** | The TV plays scenes, captions and the animated character. The phone sends gesture commands. |
+| 4. **Build** | A local story engine creates an eight-scene plot. A background matcher picks illustrations from the app's library. |
+| 5. **Narrate with AI** | Amazon Bedrock writes short, scene-specific narration grounded in the chosen illustration. |
+| 6. **Speak** | Amazon Polly generates the voice, mixed with background music using FFmpeg. |
+| 7. **Interact** | The TV plays scenes, captions and the animated character. The phone sends gesture commands. |
 
 ---
 
