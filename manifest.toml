@@ -26,10 +26,6 @@ id = "/com.amazon.kepler.keplermediadescriptor_1@IKeplermediadescriptor_1"
 [[needs.module]]
 id = "/com.amazon.kepler.w3cmedia_2@IW3cmedia_3"
 
-
-
-
-
 [components]
 [[components.interactive]]
 id = "com.sketchtales.tv.main"

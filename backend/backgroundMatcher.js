@@ -61,7 +61,7 @@ function loadLibrary() {
 
       const absolutePath = path.resolve(LIBRARY_DIR, relativePath);
 
-      // Prevent paths from escaping the library directory.
+    
       if (
         absolutePath !== libraryRoot &&
         !absolutePath.startsWith(libraryRoot + path.sep)
@@ -145,24 +145,23 @@ function scoreImage(image, scene) {
   const sceneSetting = scene.librarySetting || scene.setting;
   const imageSetting = image.setting || image.environment;
 
-  // A background from another world must never be selected.
+ 
   if (imageSetting !== sceneSetting) {
     return Number.NEGATIVE_INFINITY;
   }
 
-  // Match the scene's camera/view type.
+ 
   if (scene.view && image.view === scene.view) {
     score += 10;
   } else if (scene.view && image.view) {
     score -= 3;
   }
 
-  // Match the scene's mood.
+ 
   if (scene.mood && image.mood === scene.mood) {
     score += 3;
   }
 
-  // Prefer backgrounds containing relevant story landmarks.
   const sceneLandmarks = Array.isArray(scene.landmarks)
     ? scene.landmarks
     : [];
@@ -179,7 +178,6 @@ function scoreImage(image, scene) {
     }
   }
 
-  // If the scene has a specific requested background ID, prefer it.
   if (
     scene.backgroundId &&
     image.id === scene.backgroundId
@@ -213,8 +211,6 @@ function matchBackground(scene, options = {}) {
     const imageSetting = image.setting || image.environment;
     if (imageSetting !== setting) return false;
 
-    // Pictures tagged onlyFor are used only in stories with one of those quests
-    // (e.g. a treasure chest picture only for treasure-style quests).
     if (Array.isArray(image.onlyFor) && image.onlyFor.length > 0) {
       return image.onlyFor.includes(scene.quest);
     }
@@ -238,7 +234,7 @@ function matchBackground(scene, options = {}) {
   const scored = candidates.map((image) => {
     let score = scoreImage(image, scene);
 
-    // Prefer an unused image when possible.
+   
     if (usedIds.has(image.id)) {
       score -= 100;
     }
@@ -250,7 +246,7 @@ function matchBackground(scene, options = {}) {
     item => !usedIds.has(item.image.id),
   );
 
-  // Exhaust unused backgrounds before reusing one.
+
   const pool = unused.length > 0 ? unused : scored;
 
   const highestScore = Math.max(

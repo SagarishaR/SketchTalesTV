@@ -78,7 +78,7 @@ const upload = multer({
 
 const sessions = new Map();
 
-// Story worlds available in the background library.
+
 const LIBRARY_STORY_SETTINGS = [
   'moon_garden',
   'coral_reef',
@@ -97,7 +97,7 @@ function generateCode() {
   return String(crypto.randomInt(100000, 1000000));
 }
 
-// Randomize world order for each pairing session.
+
 function shuffleSettings(settings) {
   const shuffled = [...settings];
 
@@ -126,7 +126,7 @@ function createSession() {
     story: null,
     recentRecipeHashes: [],
 
-    // Every world appears once before a new cycle begins.
+   
     worldQueue: shuffleSettings(LIBRARY_STORY_SETTINGS),
     usedWorlds: [],
   };
@@ -159,7 +159,7 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Create a pairing session.
+
 app.post('/api/pairing', async (req, res) => {
   try {
     const session = createSession();
@@ -194,7 +194,7 @@ app.post('/api/pairing', async (req, res) => {
   }
 });
 
-// Pair the phone with the TV.
+
 app.post('/api/pairing/:code/join', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -208,7 +208,7 @@ app.post('/api/pairing/:code/join', (req, res) => {
   });
 });
 
-// Get pairing status.
+
 app.get('/api/pairing/:code', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -224,7 +224,6 @@ app.get('/api/pairing/:code', (req, res) => {
   });
 });
 
-// Upload a drawing and generate a transparent character PNG.
 app.post(
   '/api/pairing/:code/drawing',
   (req, res, next) => {
@@ -285,7 +284,6 @@ app.post(
         uploadedAt: Date.now(),
       };
 
-      // A new drawing invalidates any previous story.
       session.story = null;
 
       res.status(201).json({
@@ -304,7 +302,6 @@ app.post(
   },
 );
 
-// Retrieve the original drawing.
 app.get('/api/pairing/:code/drawing', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -322,7 +319,7 @@ app.get('/api/pairing/:code/drawing', (req, res) => {
   });
 });
 
-// Retrieve the transparent character cutout.
+
 app.get('/api/pairing/:code/cutout', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -340,7 +337,7 @@ app.get('/api/pairing/:code/cutout', (req, res) => {
   });
 });
 
-// Save the selected story mood.
+
 app.post('/api/pairing/:code/mood', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -361,7 +358,7 @@ app.post('/api/pairing/:code/mood', (req, res) => {
   });
 });
 
-// Generate a story and attach matching library backgrounds.
+
 app.post('/api/pairing/:code/story', async (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -398,8 +395,7 @@ app.post('/api/pairing/:code/story', async (req, res) => {
         ).slice(-200)
       : [];
 
-    // Keep the current world at the head of the queue until story generation
-    // succeeds. A failed request therefore does not consume that world.
+    
     if (!Array.isArray(session.worldQueue) || session.worldQueue.length === 0) {
       session.worldQueue = shuffleSettings(LIBRARY_STORY_SETTINGS);
       session.usedWorlds = [];
@@ -419,7 +415,7 @@ app.post('/api/pairing/:code/story', async (req, res) => {
       ])],
     });
 
-    // Consume the world only after the story has been generated successfully.
+   
     session.worldQueue.shift();
     session.usedWorlds = [
       ...(session.usedWorlds || []),
@@ -439,7 +435,7 @@ app.post('/api/pairing/:code/story', async (req, res) => {
       `quest=${generatedBase.recipe.quest} friend=${generatedBase.recipe.friend}`,
     );
 
-    // Map each story setting to its background-library setting.
+   
     const settingMap = {
       moon_garden: 'garden',
       coral_reef: 'ocean',
@@ -454,7 +450,7 @@ app.post('/api/pairing/:code/story', async (req, res) => {
       amusement_park: 'amusement_park',
     };
 
-    // Eight scenes: two arrive, two path, two challenge, one goal, one celebrate.
+  
     const sceneViews = [
       'arrive',
       'arrive',
@@ -489,8 +485,7 @@ app.post('/api/pairing/:code/story', async (req, res) => {
 
     const generated = matchStoryBackgrounds(storyForMatching);
 
-    // Bedrock rewrites each scene's narration to fit the picture that scene
-    // will show. Falls back to the local narration on any problem.
+   
     const bedrock = await writeScenesWithBedrock({
       scenes: generated.scenes,
       hero: characterName,
@@ -552,7 +547,7 @@ app.post('/api/pairing/:code/story', async (req, res) => {
     session.genre = genre;
     session.story = story;
 
-    // Fire-and-forget: never delays or breaks the response.
+    
     saveStoryRecord(story, {
       narrationSource: bedrock.source,
       model: bedrock.model,
@@ -570,7 +565,7 @@ app.post('/api/pairing/:code/story', async (req, res) => {
   }
 });
 
-// Receive gesture commands from the paired phone.
+
 app.post('/api/pairing/:code/gesture', express.json(), (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -603,7 +598,7 @@ app.post('/api/pairing/:code/gesture', express.json(), (req, res) => {
   res.json({ok: true});
 });
 
-// Let the TV check for a new gesture.
+
 app.get('/api/pairing/:code/gesture', (req, res) => {
   const session = getValidSession(req.params.code, res);
   if (!session) return;
@@ -614,7 +609,7 @@ app.get('/api/pairing/:code/gesture', (req, res) => {
   res.json({gesture});
 });
 
-// Return upload and request errors as JSON.
+
 app.use((error, _req, res, _next) => {
   console.error('Request error:', error.message);
 

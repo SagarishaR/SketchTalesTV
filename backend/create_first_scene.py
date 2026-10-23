@@ -31,7 +31,7 @@ for y in range(H):
 
 draw = ImageDraw.Draw(bg, "RGBA")
 
-# Distant forest silhouettes.
+
 for i in range(-100, W + 120, 100):
     height = random.randint(130, 260)
     color = random.choice([
@@ -44,10 +44,9 @@ for i in range(-100, W + 120, 100):
         (i + 100, 460)
     ], fill=color)
 
-# Sunlit clearing.
 draw.ellipse((530, 180, 1100, 690), fill=(255, 224, 153, 48))
 
-# Large foreground trees on the edges.
+
 for x, width, color in [
     (20, 95, (45, 76, 61, 255)),
     (145, 48, (61, 94, 65, 230)),
@@ -83,14 +82,13 @@ for cx, cy, radius in [
                 fill=color
             )
 
-# Winding path through the clearing.
+
 draw.polygon([
     (510, 720), (810, 720), (770, 575),
     (850, 485), (755, 430), (680, 450),
     (720, 545), (640, 615)
 ], fill=(213, 174, 113, 210))
 
-# Grass and small storybook flowers.
 for _ in range(250):
     x = random.randint(0, W - 1)
     y = random.randint(430, H - 1)
@@ -104,7 +102,7 @@ for _ in range(250):
     ])
     draw.ellipse((x-r, y-r, x+r, y+r), fill=color)
 
-# Soft finishing blur on the background only.
+
 bg = bg.filter(ImageFilter.GaussianBlur(1.2)).convert("RGBA")
 
 if not CUTOUT.exists():
@@ -112,7 +110,7 @@ if not CUTOUT.exists():
 
 hero = Image.open(CUTOUT).convert("RGBA")
 
-# Crop transparent margins so the character uses the canvas well.
+
 alpha = hero.getchannel("A")
 bbox = alpha.getbbox()
 if not bbox:
@@ -120,7 +118,6 @@ if not bbox:
 
 hero = hero.crop(bbox)
 
-# Fit the character into the foreground, keeping its proportions.
 target_h = 410
 scale = target_h / hero.height
 hero = hero.resize(
@@ -128,7 +125,7 @@ hero = hero.resize(
     Image.Resampling.LANCZOS
 )
 
-# Add a subtle ground shadow.
+
 shadow_alpha = hero.getchannel("A").filter(
     ImageFilter.GaussianBlur(18)
 )
@@ -138,7 +135,7 @@ shadow_x = 430
 shadow_y = 720 - hero.height + 14
 bg.alpha_composite(shadow, (shadow_x + 16, shadow_y + 12))
 
-# Composite the child's character into the forest.
+
 hero_x = (W - hero.width) // 2 - 25
 hero_y = H - hero.height - 8
 bg.alpha_composite(hero, (hero_x, hero_y))

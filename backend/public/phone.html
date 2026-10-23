@@ -40,7 +40,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ---------- sky decoration ---------- */
 .sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
 .star {
   position: absolute; color: #fff3b0; opacity: .8;
@@ -73,7 +72,6 @@ main {
   width: 100%; max-width: 440px; margin: 0 auto;
 }
 
-/* ---------- header ---------- */
 .hero { text-align: center; padding: 6px 0 4px; }
 .logo {
   display: inline-grid; place-items: center;
@@ -91,7 +89,6 @@ h1 {
 h1 span { color: var(--sun); }
 .tag { margin: 0 auto; max-width: 320px; font-size: 18px; line-height: 1.25; color: var(--soft); }
 
-/* ---------- steps ---------- */
 .steps { list-style: none; display: flex; gap: 8px; margin: 18px 0 4px; padding: 0; }
 .steps li {
   flex: 1; text-align: center; padding: 8px 4px 7px; border-radius: 16px;
@@ -109,7 +106,6 @@ h1 span { color: var(--sun); }
 .steps li.done span { filter: none; opacity: 1; }
 @keyframes hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 
-/* ---------- cards ---------- */
 .card {
   margin-top: 16px; padding: 20px 18px 18px;
   background: var(--card); border: 2px solid var(--line); border-radius: 26px;
@@ -158,14 +154,14 @@ button.ghost {
   box-shadow: inset 0 0 0 2px var(--line);
 }
 
-/* polaroid preview */
+
 #preview {
   display: none; width: 100%; max-height: 300px; margin-top: 18px; object-fit: contain;
   background: #fff8e7; padding: 10px 10px 26px; border-radius: 8px;
   transform: rotate(-1.5deg); box-shadow: 0 10px 24px rgba(0, 0, 0, .4);
 }
 
-/* hero cut-out card */
+
 #heroPreview { display: none; margin-top: 18px; text-align: center; }
 #heroImage {
   width: 100%; max-height: 240px; object-fit: contain; border-radius: 20px; padding: 10px;
@@ -174,7 +170,7 @@ button.ghost {
 }
 #heroPreview p { margin: 8px 0 0; font-size: 18px; font-weight: 700; color: var(--teal); }
 
-/* gesture area */
+
 #gestureVideo {
   width: 100%; margin-top: 12px; border-radius: 22px; background: #0a0624;
   border: 3px solid var(--sun); transform: scaleX(-1);   /* mirror, like a mirror */
@@ -197,7 +193,7 @@ button.ghost {
 #status { margin: 0; text-align: center; font-size: 18px; font-weight: 700; color: var(--ink); }
 #gestureStatus { font-weight: 700; color: var(--sun); }
 
-/* confetti */
+
 .bit {
   position: fixed; left: 50%; top: 62%; z-index: 20; font-size: 26px; pointer-events: none;
   animation: fly 1.3s ease-out forwards;
@@ -341,7 +337,6 @@ let gestureRunning = false;
 let detector = null;
 let lastVideoTime = -1;
 
-// ---------- little helpers for the friendly look ----------
 function setStep(n) {
   stepItems.forEach(item => {
     const step = Number(item.dataset.step);
@@ -372,7 +367,7 @@ function flashChip(action) {
 }
 
 newPictureButton.addEventListener('click', () => {
-  // Clear the previous selection and preview.
+
   drawingInput.value = '';
   preview.removeAttribute('src');
   preview.style.display = 'none';
@@ -383,7 +378,6 @@ newPictureButton.addEventListener('click', () => {
     previewUrl = null;
   }
 
-  // Open the phone's photo picker or camera.
   drawingInput.click();
 });
 
@@ -640,23 +634,19 @@ function stopCamera() {
   useGesturesButton.disabled = false;
 }
 
-// ==== GESTURE DETECTOR START (pure logic, no browser calls) ====
-// A swipe = the palm travels far enough, fast enough and in one direction
-// inside a short time window. A still hand held up = pause/play.
+
 const GESTURE_TUNING = {
-  // The front camera picture is NOT mirrored, so flip x. Then "left" means the
-  // user's own left. If next/previous ever feel reversed, set this to false.
   mirror: true,
-  windowMs: 450,          // look at the last 0.45 s of hand movement
-  minSwipeDist: 0.18,     // palm must travel 18% of the picture width
-  minSwipeMs: 120,        // ...but not in a single jittery frame
-  minMonotonic: 0.7,      // 70% of the small steps must go the same way
-  swipeCooldownMs: 1200,  // one swipe at a time
-  handSettleMs: 250,      // a hand that just entered the picture can't swipe yet
-  stillDist: 0.04,        // "still" = moved less than 4% of the width
-  holdMs: 500,            // hold a pose this long to trigger it
+  windowMs: 450,          
+  minSwipeDist: 0.18,    
+  minSwipeMs: 120,        
+  minMonotonic: 0.7,     
+  swipeCooldownMs: 1200,  
+  handSettleMs: 250,      
+  stillDist: 0.04,        
+  holdMs: 500,            
   staticCooldownMs: 1500,
-  afterSwipeQuietMs: 1000 // an open hand that just swiped must not also "pause"
+  afterSwipeQuietMs: 1000 
 };
 
 function createGestureDetector(tuning = GESTURE_TUNING) {
@@ -668,8 +658,6 @@ function createGestureDetector(tuning = GESTURE_TUNING) {
   let heldSince = 0;
   let heldFired = false;
 
-  // t = time in ms, handX = palm x (0..1) or null if no hand, pose = MediaPipe pose name.
-  // Returns '', 'swipe_left', 'swipe_right', 'open_palm' or 'thumbs_up'.
   function update(t, handX, pose) {
     if (handX === null || handX === undefined) {
       hist = [];
@@ -682,14 +670,13 @@ function createGestureDetector(tuning = GESTURE_TUNING) {
     const x = tuning.mirror ? 1 - handX : handX;
     if (handSince === null) handSince = t;
 
-    // A hand that has only just come into view is still "arriving": its first
-    // movements are ignored, so walking into the picture never counts as a swipe.
+   
     if (t - handSince < tuning.handSettleMs) return '';
 
     hist.push({ t, x });
     while (hist.length && t - hist[0].t > tuning.windowMs) hist.shift();
 
-    // ---- swipe ----
+  
     if (
       t - lastSwipeAt >= tuning.swipeCooldownMs &&
       hist.length >= 4
@@ -719,7 +706,6 @@ function createGestureDetector(tuning = GESTURE_TUNING) {
       }
     }
 
-    // ---- held poses (only when the hand is still) ----
     if (t - lastSwipeAt < tuning.afterSwipeQuietMs) {
       heldPose = '';
       heldFired = false;
@@ -761,7 +747,7 @@ function createGestureDetector(tuning = GESTURE_TUNING) {
   return { update };
 }
 
-// Middle of the hand (wrist + the 4 finger bases) is steadier than the wrist alone.
+
 function palmX(landmarks) {
   const ids = [0, 5, 9, 13, 17];
   let sum = 0;
@@ -774,7 +760,7 @@ function palmX(landmarks) {
   }
   return n ? sum / n : null;
 }
-// ==== GESTURE DETECTOR END ====
+
 
 const POSE_NAMES = {
   Open_Palm: 'open hand ✋',

@@ -15,41 +15,25 @@ import {
   View,
 } from 'react-native';
 
-// ---------------------------------------------------------------------------
-// Configuration
-// ---------------------------------------------------------------------------
-
-// Your Mac's address on your Wi-Fi. Get it by running:  ipconfig getifaddr en0
-// Change this one line if the address printed there is different.
-// NOTE: a Cloudflare quick-tunnel address changes every time the tunnel restarts.
 const API_BASE = 'https://flag-consequence-duplicate-scientists.trycloudflare.com';
 
-// To test the player on its own, paste any https .mp3 link here
-// (for example https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3).
-// Leave it as '' for normal use.
 const AUDIO_TEST_URL = '';
 const LOCAL_SCENE_VIDEO = `${API_BASE}/scenes/complete-crystal-bell-story.mp4`;
 
-// true  = play the MP4 film on the video surface (the film draws over the PNG backgrounds).
-// false = in-app stage: scene background images + the animated hero (the old fallback).
+
 const USE_VIDEO = false;
 
-// Genres shown on the selection screen. Add 'funny' and 'animals' back
-// once you have matching artwork for them.
+
 const ENABLED_GENRES = ['magical'];
 
-// Seconds-based fallbacks, in milliseconds.
-const FALLBACK_SCENE_MS = 12000; // used when a scene has no audio or audio fails
-const MAX_SCENE_MS = 60000; // safety net so a stuck audio file never freezes the story
 
-// Keep content away from the screen edges (TV safe area).
+const FALLBACK_SCENE_MS = 12000; 
+const MAX_SCENE_MS = 60000; 
+
+
 const SAFE = 40;
 
-// ---------------------------------------------------------------------------
-// Artwork
-// ---------------------------------------------------------------------------
 
-// Metro needs static require() paths, so every image is listed explicitly.
 const BG = {
   forest: require('../backend/public/scenes/scene-1-dinosaur-valley.png'),
   river: require('../backend/public/scenes/scene-2-crystal-bell.png'),
@@ -60,16 +44,7 @@ const BG = {
 
 const DEFAULT_ART = [BG.forest, BG.river, BG.cave, BG.castle, BG.celebration];
 
-// One list of five backgrounds per genre. Until your new illustrations exist,
-// every genre uses the default set. When they do, replace a line like this:
-//
-//   magical: [
-//     require('../backend/public/scenes/magical/1.png'),
-//     require('../backend/public/scenes/magical/2.png'),
-//     require('../backend/public/scenes/magical/3.png'),
-//     require('../backend/public/scenes/magical/4.png'),
-//     require('../backend/public/scenes/magical/5.png'),
-//   ],
+
 const SCENE_ART: Record<string, any[]> = {
   magical: DEFAULT_ART,
   space: DEFAULT_ART,
@@ -77,27 +52,12 @@ const SCENE_ART: Record<string, any[]> = {
   animals: DEFAULT_ART,
 };
 
-// Optional strip of grass/rocks drawn IN FRONT of the hero so the character
-// looks like it stands inside the scene. Use a transparent PNG, then enable it:
-//   const FOREGROUND: any = require('../backend/public/scenes/foreground.png');
+
 const FOREGROUND: any = null;
 
-// Fallback hero if no cutout has been uploaded.
 const FALLBACK_HERO = require('../backend/public/scenes/animated-elephant.png');
 
-// ---------------------------------------------------------------------------
-// Per-scene staging
-// ---------------------------------------------------------------------------
 
-// How the hero acts in each of the 8 story beats:
-//  walkin    - walks in from the side with little steps, then breathes
-//  breathe   - gentle breathing and a small look-around
-//  lean      - leans toward the clue it just found
-//  shake     - a quick worried shake ("Oops!")
-//  tiptoe    - slow careful steps
-//  hop       - a happy hop
-//  jump      - a big jump ("Found it!")
-//  celebrate - happy wobble
 type Motion =
   | 'walkin'
   | 'breathe'
@@ -108,29 +68,21 @@ type Motion =
   | 'jump'
   | 'celebrate';
 
-// x = horizontal centre of the hero (0..1 of stage width)
-// y = not used for standing height any more: the picture's floorY decides it
-// h = hero height as a fraction of stage height
 const SCENE_PLAN: {x: number; y: number; h: number; motion: Motion}[] = [
-  {x: 0.30, y: 0.88, h: 0.30, motion: 'walkin'},    // 1  A Happy Start
-  {x: 0.30, y: 0.88, h: 0.30, motion: 'breathe'},   // 2  A Big Mission
-  {x: 0.36, y: 0.88, h: 0.30, motion: 'lean'},      // 3  The First Clue
-  {x: 0.36, y: 0.88, h: 0.30, motion: 'shake'},     // 4  Oops!
-  {x: 0.40, y: 0.88, h: 0.30, motion: 'tiptoe'},    // 5  A Careful Choice
-  {x: 0.46, y: 0.88, h: 0.30, motion: 'hop'},       // 6  The Clues Match
-  {x: 0.50, y: 0.88, h: 0.32, motion: 'jump'},      // 7  Found It!
-  {x: 0.50, y: 0.88, h: 0.32, motion: 'celebrate'}, // 8  Happy Ending
+  {x: 0.30, y: 0.88, h: 0.30, motion: 'walkin'},    
+  {x: 0.30, y: 0.88, h: 0.30, motion: 'breathe'},   
+  {x: 0.36, y: 0.88, h: 0.30, motion: 'lean'},      
+  {x: 0.36, y: 0.88, h: 0.30, motion: 'shake'},     
+  {x: 0.40, y: 0.88, h: 0.30, motion: 'tiptoe'},   
+  {x: 0.46, y: 0.88, h: 0.30, motion: 'hop'},       
+  {x: 0.50, y: 0.88, h: 0.32, motion: 'jump'},      
+  {x: 0.50, y: 0.88, h: 0.32, motion: 'celebrate'}, 
 ];
 
-// Which way does the drawing face? If the hero walks in BACKWARDS
-// (tail first), change this to false.
-const HERO_FACES_RIGHT = true;
 
-// Lets the hero sink a little into the ground so the feet touch it
-// (fraction of the hero's height). 0 = feet exactly on the floor line.
+const HERO_FACES_RIGHT = true;
 const FEET_SINK = 0.03;
 
-// How long the one-time entrance move of each scene lasts (milliseconds).
 const ENTER_MS: Record<Motion, number> = {
   walkin: 2200,
   breathe: 1000,
@@ -142,10 +94,7 @@ const ENTER_MS: Record<Motion, number> = {
   celebrate: 1000,
 };
 
-// Set to true while you fine-tune ground positions, then set back to false.
 const SHOW_GROUND_GUIDE = false;
-
-// Twinkling sparkles scattered over each scene (fractions of the stage).
 const SPARKS = [
   {x: 0.08, y: 0.14, size: 22, delay: 0},
   {x: 0.22, y: 0.3, size: 16, delay: 700},
@@ -159,9 +108,6 @@ const SPARKS = [
   {x: 0.46, y: 0.46, size: 12, delay: 1600},
 ];
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 type PairingSession = {
   code: string;
@@ -230,14 +176,6 @@ const ALL_GENRES = [
 
 const genres = ALL_GENRES.filter(g => ENABLED_GENRES.includes(g.id));
 
-// ---------------------------------------------------------------------------
-// Small reusable pieces
-// ---------------------------------------------------------------------------
-
-// A value that eases 0 -> 1 -> 0 forever. Used for bobbing, hopping, walking.
-// runKey: change it to restart the loop. A native-driven value stops when the
-// view using it is removed, so the loop must start again each time the story
-// screen is shown (for example after "New adventure").
 const useLoop = (halfMs: number, runKey: string = '') => {
   const value = useRef(new Animated.Value(0)).current;
 
@@ -266,16 +204,12 @@ const useLoop = (halfMs: number, runKey: string = '') => {
   return value;
 };
 
-// Evenly spaced keyframes for a driver that runs 0 -> 1 once (or loops).
-// inputRange is built from the values, so the two lists can never differ in length.
 const kf = (driver: Animated.Value, values: (number | string)[]) =>
   driver.interpolate({
     inputRange: values.map((_, i) => i / (values.length - 1)),
     outputRange: values as number[] | string[],
   });
 
-// Cuts a scene's narration into short caption lines (one sentence at a time;
-// a very long sentence is cut at a comma or a space near its middle).
 const MAX_CAPTION_CHARS = 90;
 const splitCaptions = (text: string): string[] => {
   const sentences =
@@ -321,7 +255,6 @@ const splitCaptions = (text: string): string[] => {
 
   sentences.forEach(cut);
 
-  // glue very short pieces ("The end.", a quote tag) to the line before them
   const merged: string[] = [];
   lines.forEach(line => {
     const last = merged.length - 1;
@@ -339,13 +272,9 @@ const splitCaptions = (text: string): string[] => {
   return merged.length ? merged : [String(text || '')];
 };
 
-// 0, -amp, 0, -amp, ... 0  (n little steps)
 const steps = (n: number, amp: number) =>
   Array.from({length: n * 2 + 1}, (_, i) => (i % 2 === 1 ? -amp : 0));
 
-// ---------------------------------------------------------------------------
-// Storybook scenery: sky, clouds, hills, sparkle bursts and the book cover
-// ---------------------------------------------------------------------------
 
 const SKY_STARS = [
   {x: 0.04, y: 0.08, size: 18, delay: 0},
@@ -371,7 +300,6 @@ type CloudProps = {
   travel: number;
 };
 
-// A soft cloud that drifts slowly across the sky.
 const Cloud = ({top, width, duration, phase, alpha, travel}: CloudProps) => {
   const t = useRef(new Animated.Value(phase)).current;
 
@@ -446,7 +374,6 @@ const Cloud = ({top, width, duration, phase, alpha, travel}: CloudProps) => {
   );
 };
 
-// Night sky with a glowing moon, twinkling stars, drifting clouds and rolling hills.
 const SkyBackdrop = ({w, h}: {w: number; h: number}) => {
   const glow = useLoop(2600);
   const moon = Math.max(70, Math.round(h * 0.17));
@@ -586,7 +513,6 @@ const BURST_ITEMS = Array.from({length: 16}, (_, i) => {
   };
 });
 
-// A one-time burst of stars flying out from a point.
 const Burst = ({
   x,
   y,
@@ -656,10 +582,9 @@ const Burst = ({
   );
 };
 
-const BOOK_HOLD_MS = 1100; // the closed book waits
-const BOOK_OPEN_MS = 1700; // the covers swing open
+const BOOK_HOLD_MS = 1100; 
+const BOOK_OPEN_MS = 1700; 
 
-// One half of the storybook cover. It folds away towards its own outer edge.
 const BookPanel = ({
   side,
   w,
@@ -727,7 +652,6 @@ const BookPanel = ({
   );
 };
 
-// The closed storybook that opens to reveal the first scene.
 const BookCover = ({
   progress,
   pulse,
@@ -847,9 +771,6 @@ const Sparkle = ({x, y, size, delay}: SparkleProps) => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// App
-// ---------------------------------------------------------------------------
 
 export const App = () => {
   const [session, setSession] = useState<PairingSession | null>(null);
@@ -887,14 +808,9 @@ export const App = () => {
   const [bgShown, setBgShown] = useState<string | null>(null);
   const [bookPhase, setBookPhase] = useState<'closed' | 'done'>('done');
   const [screenSize, setScreenSize] = useState({w: 960, h: 540});
-  // Width / height of the hero picture, so its box matches its real shape and
-  // the feet sit exactly on the floor line (a square box floats wide pictures).
   const [heroAspect, setHeroAspect] = useState(1);
-  // Tracks the latest uploaded drawing so the TV only processes each upload once.
   const lastDrawingUploadedAt = useRef<number | null>(null);
 
-  // Play the locally rendered film on the video surface.
-  // Skipped entirely when USE_VIDEO is false, so the in-app stage shows instead.
   useEffect(() => {
     if (!USE_VIDEO || screen !== 'story' || !videoSurfaceHandle) {
       return;
@@ -961,7 +877,6 @@ export const App = () => {
     };
   }, [screen, videoSurfaceHandle]);
 
-  // Pause/resume the film when the phone sends an open-palm gesture.
   useEffect(() => {
     const player = videoPlayerRef.current;
     if (!USE_VIDEO || screen !== 'story' || !player) return;
@@ -977,7 +892,6 @@ export const App = () => {
     }
   }, [isStoryPaused, screen]);
 
-  // Measure the hero picture (the uploaded cutout, or the fallback).
   useEffect(() => {
     let active = true;
     const apply = (w: number, h: number) => {
@@ -1002,18 +916,17 @@ export const App = () => {
     };
   }, [characterUri]);
 
-  // Animation drivers (all native-driven).
   const loopKey = `${screen}:${story?.id ?? ''}`;
-  const bob = useLoop(380, loopKey); // quick little bounce
-  const beat = useLoop(650, loopKey); // hop / pop rhythm
-  const breath = useLoop(1500, loopKey); // slow breathing
-  const enter = useRef(new Animated.Value(0)).current; // one-time move at the start of each scene
-  const drift = useRef(new Animated.Value(0)).current; // background camera drift
-  const fade = useRef(new Animated.Value(1)).current; // scene-change fade overlay
-  const bookAnim = useRef(new Animated.Value(0)).current; // 0 = closed book, 1 = open
-  const screenIn = useRef(new Animated.Value(0)).current; // entrance of the pairing / genre / ending screens
+  const bob = useLoop(380, loopKey); 
+  const beat = useLoop(650, loopKey); 
+  const breath = useLoop(1500, loopKey);
+  const enter = useRef(new Animated.Value(0)).current; 
+  const drift = useRef(new Animated.Value(0)).current; 
+  const fade = useRef(new Animated.Value(1)).current; 
+  const bookAnim = useRef(new Animated.Value(0)).current;
+  const screenIn = useRef(new Animated.Value(0)).current; 
 
-  // ---- Pairing and drawing polling (unchanged behaviour) -------------------
+  
   useEffect(() => {
     let active = true;
     let pollTimer: ReturnType<typeof setInterval> | undefined;
@@ -1151,7 +1064,7 @@ export const App = () => {
     };
   }, []);
 
-  // ---- Story creation ------------------------------------------------------
+  
   const createStory = async (genre: string) => {
     if (!session || storyLoading) {
       return;
@@ -1178,7 +1091,7 @@ export const App = () => {
         throw new Error(result.error || 'Could not create the story');
       }
 
-      // Load all background pictures first, so no scene starts on a black screen.
+      
       try {
         const urls: string[] = (result.scenes || [])
           .map((sc: any) => sc.backgroundUrl)
@@ -1197,7 +1110,7 @@ export const App = () => {
           ]);
         }
       } catch {
-        // pictures will simply load when each scene starts
+       
       }
 
       resetStageForNewStory();
@@ -1230,7 +1143,7 @@ export const App = () => {
 
   const goPrev = () => setSceneIndex(index => Math.max(0, index - 1));
 
-  // Poll the paired-phone gesture endpoint while a story is playing.
+  
   useEffect(() => {
     if (screen !== 'story' || !session?.code || !story) return;
 
@@ -1287,11 +1200,10 @@ export const App = () => {
       active = false;
       clearInterval(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [screen, session?.code, story?.id]);
 
-  // Put every animation and picture back to its starting state, so the next
-  // story never shows leftovers of the previous one (this was the flicker).
+  
   const resetStageForNewStory = () => {
     fade.setValue(1);
     drift.setValue(0);
@@ -1311,7 +1223,7 @@ export const App = () => {
     setScreen('genres');
   };
 
-  // ---- Storybook opening: the closed book waits, then swings open ----------
+  
   useEffect(() => {
     if (screen !== 'story' || bookPhase !== 'closed') {
       return;
@@ -1338,7 +1250,7 @@ export const App = () => {
     return () => seq.stop();
   }, [screen, bookPhase, story?.id, bookAnim]);
 
-  // ---- Entrance of the pairing / genre / ending screens --------------------
+  
   useEffect(() => {
     if (screen === 'story') {
       return;
@@ -1357,7 +1269,6 @@ export const App = () => {
     return () => anim.stop();
   }, [screen, screenIn]);
 
-  // ---- Scene change: restart camera drift and fade in ----------------------
   useEffect(() => {
     if (screen !== 'story') {
       return;
@@ -1384,7 +1295,6 @@ export const App = () => {
     return () => intro.stop();
   }, [screen, sceneIndex, story?.id, drift, fade]);
 
-  // ---- Hero entrance move: restarts at the start of every scene ------------
   useEffect(() => {
     if (screen !== 'story') {
       return;
@@ -1392,7 +1302,6 @@ export const App = () => {
 
     enter.setValue(0);
 
-    // wait until the storybook has opened
     if (bookPhase !== 'done') {
       return;
     }
@@ -1411,7 +1320,6 @@ export const App = () => {
     return () => anim.stop();
   }, [screen, sceneIndex, story?.id, enter, bookPhase]);
 
-  // ---- Narration: one player per scene; the audio drives the story ---------
   useEffect(() => {
     if (
       screen !== 'story' ||
@@ -1428,8 +1336,6 @@ export const App = () => {
     let player: any = null;
     let captionTimer: ReturnType<typeof setInterval> | null = null;
     const timers: ReturnType<typeof setTimeout>[] = [];
-
-    // ---- Captions: one short line at a time, following the narration ------
     const lines = splitCaptions(currentScene.narration);
     const weights = lines.map(line => line.length + 12);
     const weightSum = weights.reduce((a, b) => a + b, 0);
@@ -1509,7 +1415,6 @@ export const App = () => {
           setAudioDebug(`audio: playing ${AUDIO_TEST_URL || url}`);
           startCaptions();
 
-          // Safety net in case neither 'ended' nor 'error' ever fires.
           timers.push(setTimeout(finish, MAX_SCENE_MS));
         } catch (error) {
           console.warn('Narration playback failed:', error);
@@ -1538,12 +1443,9 @@ export const App = () => {
         void Promise.resolve(player.deinitialize?.()).catch(() => {});
       }
     };
-    // goNext is intentionally omitted: it is recreated every render and this
-    // effect already re-runs whenever the scene changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, story?.id, sceneIndex, isStoryPaused, bookPhase]);
 
-  // ---- Hero staging for the current scene ----------------------------------
   const plan = SCENE_PLAN[Math.min(sceneIndex, SCENE_PLAN.length - 1)];
   const maxHeroW = stage.w * 0.6;
   const heroW = Math.min(stage.h * plan.h * heroAspect, maxHeroW);
@@ -1557,7 +1459,6 @@ export const App = () => {
   const SH = stage.h;
   const H = heroH;
 
-  // Sideways movement of the hero (the shadow uses the same value).
   const shiftX = (): any => {
     switch (plan.motion) {
       case 'walkin':
@@ -1579,7 +1480,7 @@ export const App = () => {
     }
   };
 
-  // Soft breathing that keeps the feet on the ground.
+  
   const breathing = (): any[] => [
     {translateY: kf(breath, [0, -H * 0.015])},
     {scaleY: kf(breath, [1, 1.03])},
@@ -1656,9 +1557,7 @@ const backgroundUri = currentScene?.backgroundUrl
   ? `${API_BASE}${currentScene.backgroundUrl}`
   : null;
 
-  // =========================================================================
-  // STORY SCREEN: full-screen stage
-  // =========================================================================
+ 
   if (screen === 'story' && story && currentScene) {
     return (
       <View style={styles.storyRoot}>
@@ -1869,9 +1768,6 @@ const backgroundUri = currentScene?.backgroundUrl
     );
   }
 
-  // =========================================================================
-  // OTHER SCREENS: pairing, genres, ending
-  // =========================================================================
   const showcaseSource = characterUri
     ? heroSource
     : drawingUri
@@ -2284,9 +2180,6 @@ const backgroundUri = currentScene?.backgroundUrl
   );
 };
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
   screen: {
@@ -2582,7 +2475,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
-  // Loading overlay (while the story is being created)
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#100E20F2',
@@ -2605,7 +2497,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
-  // Story stage
   storyRoot: {
     flex: 1,
     backgroundColor: '#000000',
@@ -2701,7 +2592,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Ending
   endingContent: {
     flex: 1,
     alignItems: 'center',
@@ -2725,7 +2615,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Shared buttons
   controlButton: {
     minWidth: 125,
     minHeight: 43,
@@ -2773,7 +2662,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 1.2,
   },
-  // ---- New look: first page, hero reveal, storybook cover -------------------
+ 
   eyebrowPill: {
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
