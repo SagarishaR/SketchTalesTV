@@ -1,0 +1,1157 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "garden-arrive",
+      "file": "garden/garden-arrive.png",
+      "setting": "garden",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "garden gate",
+        "open path",
+        "flowers"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-arrive-2",
+      "file": "garden/garden-arrive-2.png",
+      "setting": "garden",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "valley path",
+        "river",
+        "hills"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-path",
+      "file": "garden/garden-path.png",
+      "setting": "garden",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "winding path",
+        "tree",
+        "rocks"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-path-2",
+      "file": "garden/garden-path-2.png",
+      "setting": "garden",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "wooden bridge",
+        "stream",
+        "winding path"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-challenge",
+      "file": "garden/garden-challenge.png",
+      "setting": "garden",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "stepping stones",
+        "stream",
+        "riverbank"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-challenge-2",
+      "file": "garden/garden-challenge-2.png",
+      "setting": "garden",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "fallen log",
+        "gorge",
+        "crossing"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-goal",
+      "file": "garden/garden-goal.png",
+      "setting": "garden",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "raised plateau",
+        "large tree",
+        "steps"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "garden-celebrate",
+      "file": "garden/garden-celebrate.png",
+      "setting": "garden",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "pond",
+        "waterfall",
+        "gazebo"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ocean-arrival",
+      "file": "ocean/ocean-arrival.png",
+      "setting": "ocean",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "reef entrance",
+        "sandy seabed",
+        "sunbeams"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ocean-reef-path",
+      "file": "ocean/ocean-reef-path.png",
+      "setting": "ocean",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "coral path",
+        "shipwreck",
+        "reef"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ocean-kelp-forest",
+      "file": "ocean/ocean-crystal-cave.png",
+      "setting": "ocean",
+      "view": "path",
+      "mood": "curious",
+      "landmarks": [
+        "kelp forest",
+        "seaweed",
+        "sandy trail"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ocean-coral-bridge",
+      "file": "ocean/ocean-coral-bridge.png",
+      "setting": "ocean",
+      "view": "challenge",
+      "mood": "exploration",
+      "landmarks": [
+        "reef terraces",
+        "coral rocks",
+        "distant arches"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ocean-crystal-cave",
+      "file": "ocean/ocean-kelp-forest.png",
+      "setting": "ocean",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "underwater cave",
+        "glowing crystals",
+        "rock arch"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ocean-underwater-kingdom",
+      "file": "ocean/ocean-underwater-kingdom.png",
+      "setting": "ocean",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "reef terraces",
+        "underwater arches",
+        "distant kingdom"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ocean-treasure-discovery",
+      "file": "ocean/ocean-treasure-discovery.png",
+      "setting": "ocean",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "treasure chest",
+        "coins",
+        "stone pillar"
+      ],
+      "floorY": 0.78,
+      "onlyFor": [
+        "rainbow_map",
+        "golden_key"
+      ]
+    },
+    {
+      "id": "ocean-peaceful-reef",
+      "file": "ocean/ocean-peaceful-reef.png",
+      "setting": "ocean",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "treasure chest",
+        "shipwreck",
+        "colorful coral"
+      ],
+      "floorY": 0.78,
+      "onlyFor": [
+        "rainbow_map",
+        "golden_key"
+      ]
+    },
+    {
+      "id": "dinosaur-crystal-cavern",
+      "file": "dinosaur-valley/dinosaur-crystal-cavern.png",
+      "setting": "dinosaur_valley",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "waterfall",
+        "turquoise lake",
+        "volcano"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "dinosaur-fossil-discovery",
+      "file": "dinosaur-valley/dinosaur-fossil-discovery.png",
+      "setting": "dinosaur_valley",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "dinosaur fossils",
+        "rocky ground",
+        "ancient bones"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "dinosaur-hidden-waterfall",
+      "file": "dinosaur-valley/dinosaur-hidden-waterfall.png",
+      "setting": "dinosaur_valley",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "waterfall",
+        "rocky pool",
+        "lush prehistoric plants"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "dinosaur-intro",
+      "file": "dinosaur-valley/dinosaur-intro.png",
+      "setting": "dinosaur_valley",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "prehistoric valley",
+        "distant mountains",
+        "open ground"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "dinosaur-jungle-trail",
+      "file": "dinosaur-valley/dinosaur-jungle-trail.png",
+      "setting": "dinosaur_valley",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "jungle trail",
+        "tropical plants",
+        "large trees"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "dinosaur-ravine-crossing",
+      "file": "dinosaur-valley/dinosaur-ravine-crossing.png",
+      "setting": "dinosaur_valley",
+      "view": "challenge",
+      "mood": "hopeful",
+      "landmarks": [
+        "deep ravine",
+        "rocky crossing",
+        "steep cliffs"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "dinosaur-sunset-valley",
+      "file": "dinosaur-valley/dinosaur-sunset-valley.png",
+      "setting": "dinosaur_valley",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "sunset sky",
+        "wide valley",
+        "distant mountains"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "dinosaur-volcanic-pass",
+      "file": "dinosaur-valley/dinosaur-volcanic-pass.png",
+      "setting": "dinosaur_valley",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "volcanic rocks",
+        "mountain pass",
+        "lava-lit landscape"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "forest-ancient-tree-bridge",
+      "file": "enchanted-forest/forest-ancient-tree-bridge.jpeg",
+      "setting": "enchanted_forest",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "ancient tree",
+        "wooden bridge",
+        "forest stream"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "forest-crystal-cave",
+      "file": "enchanted-forest/forest-crystal-cave.jpeg",
+      "setting": "enchanted_forest",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "crystal cave",
+        "glowing crystals",
+        "rocky walls"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "forest-enchanted-waterfall",
+      "file": "enchanted-forest/forest-enchanted-waterfall.jpeg",
+      "setting": "enchanted_forest",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "waterfall",
+        "mossy rocks",
+        "enchanted forest"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "forest-entrance",
+      "file": "enchanted-forest/forest-entrance.jpeg",
+      "setting": "enchanted_forest",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "forest entrance",
+        "woodland path",
+        "tall trees"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "forest-glowing-grove",
+      "file": "enchanted-forest/forest-glowing-grove.jpeg",
+      "setting": "enchanted_forest",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "glowing plants",
+        "woodland clearing",
+        "enchanted trees"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "forest-peaceful-celebration",
+      "file": "enchanted-forest/forest-peaceful-celebration.jpeg",
+      "setting": "enchanted_forest",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "peaceful clearing",
+        "glowing lights",
+        "forest plants"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "forest-thorny-crossing",
+      "file": "enchanted-forest/forest-thorny-crossing.jpeg",
+      "setting": "enchanted_forest",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "thorny plants",
+        "narrow crossing",
+        "forest path"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "forest-whispering-trail",
+      "file": "enchanted-forest/forest-whispering-trail.jpeg",
+      "setting": "enchanted_forest",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "winding forest trail",
+        "tall trees",
+        "woodland plants"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "aurora-mountain-pass",
+      "file": "snow-world/aurora-mountain-pass.jpeg",
+      "setting": "winter_village",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "aurora lights",
+        "snowy mountains",
+        "icy path"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "crystal-ice-cave",
+      "file": "snow-world/crystal-ice-cave.jpeg",
+      "setting": "winter_village",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "ice cave",
+        "ice crystals",
+        "frozen walls"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "frosty-forest-trail",
+      "file": "snow-world/frosty-forest-trail.jpeg",
+      "setting": "winter_village",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "snow-covered trail",
+        "frosty trees",
+        "winter forest"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "frozen-crossing",
+      "file": "snow-world/frozen-crossing.jpeg",
+      "setting": "winter_village",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "frozen crossing",
+        "icy ground",
+        "snowy banks"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "frozen-waterfall",
+      "file": "snow-world/frozen-waterfall.jpeg",
+      "setting": "winter_village",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "frozen waterfall",
+        "ice formations",
+        "snowy rocks"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ice-palace",
+      "file": "snow-world/ice-palace.jpeg",
+      "setting": "winter_village",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "ice palace",
+        "ice towers",
+        "snow-covered courtyard"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "snowy-arrival",
+      "file": "snow-world/snowy-arrival.jpeg",
+      "setting": "winter_village",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "snowy landscape",
+        "winter path",
+        "snow-covered trees"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "winter-celebration",
+      "file": "snow-world/winter-celebration.jpeg",
+      "setting": "winter_village",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "winter village",
+        "snowy decorations",
+        "glowing lights"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "space-alien-crystal-caves",
+      "file": "space/space-alien-crystal-caves.png",
+      "setting": "space_station",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "alien crystal cave",
+        "glowing crystals",
+        "rocky formations"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "space-arrival",
+      "file": "space/space-arrival.png",
+      "setting": "space_station",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "big planets",
+        "rocky landscape",
+        "crystals"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "space-asteroid-field",
+      "file": "space/space-asteroid-field.png",
+      "setting": "space_station",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "floating asteroids",
+        "space rocks",
+        "distant stars"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "space-cosmic-celebration",
+      "file": "space/space-cosmic-celebration.png",
+      "setting": "space_station",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "colorful stars",
+        "cosmic lights",
+        "space landscape"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "space-cosmic-path",
+      "file": "space/space-cosmic-path.png",
+      "setting": "space_station",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "cosmic pathway",
+        "distant planets",
+        "stars"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "space-meteor-challenge",
+      "file": "space/space-meteor-challenge.png",
+      "setting": "space_station",
+      "view": "challenge",
+      "mood": "hopeful",
+      "landmarks": [
+        "meteor field",
+        "space rocks",
+        "glowing sky"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "space-planetary-discovery",
+      "file": "space/space-planetary-discovery.png",
+      "setting": "space_station",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "distant planet",
+        "planetary landscape",
+        "starry sky"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "space-station",
+      "file": "space/space-station.png",
+      "setting": "space_station",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "space station",
+        "futuristic structures",
+        "outer space"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "toy-celebration-playground",
+      "file": "toy-kingdom/toy-celebration-playground.png",
+      "setting": "toy_city",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "toy playground",
+        "colorful play structures",
+        "play area"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "toy-marble-maze",
+      "file": "toy-kingdom/toy-marble-maze.png",
+      "setting": "toy_city",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "marble maze",
+        "curving tracks",
+        "toy structures"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "toy-puzzle-garden",
+      "file": "toy-kingdom/toy-puzzle-garden.png",
+      "setting": "toy_city",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "puzzle pieces",
+        "toy garden",
+        "colorful paths"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "toy-rainbow-castle",
+      "file": "toy-kingdom/toy-rainbow-castle.png",
+      "setting": "toy_city",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "rainbow castle",
+        "colorful towers",
+        "castle entrance"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "toy-wind-up-road",
+      "file": "toy-kingdom/toy-wind-up-road.png",
+      "setting": "toy_city",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "winding toy road",
+        "toy landscape",
+        "colorful scenery"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "toy-wobbly-bridge",
+      "file": "toy-kingdom/toy-wobbly-bridge.png",
+      "setting": "toy_city",
+      "view": "challenge",
+      "mood": "hopeful",
+      "landmarks": [
+        "wobbly bridge",
+        "toy blocks",
+        "crossing"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "toy-workshop",
+      "file": "toy-kingdom/toy-workshop.png",
+      "setting": "toy_city",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "toy workshop",
+        "building blocks",
+        "playful tools"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "toykingdom-arrival",
+      "file": "toy-kingdom/toykingdom-arrival.png",
+      "setting": "toy_city",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "toy kingdom entrance",
+        "colorful buildings",
+        "open path"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "cloud-kingdom-crystal-shrine-png",
+      "file": "cloud-kingdom/cloud-kingdom-crystal-shrine.png.png",
+      "setting": "cloud_kingdom",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "palace stairway",
+        "hanging banners",
+        "flowers"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "cloud-kingdom-floating-gardens-png",
+      "file": "cloud-kingdom/cloud-kingdom-floating-gardens.png.png",
+      "setting": "cloud_kingdom",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "floating gardens",
+        "clouds",
+        "colorful plants"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "cloud-kingdom-floating-royal-gardens-png",
+      "file": "cloud-kingdom/cloud-kingdom-floating-royal-gardens.png.png",
+      "setting": "cloud_kingdom",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "royal gardens",
+        "floating islands",
+        "clouds"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "cloud-kingdom-journey-to-royal-castle",
+      "file": "cloud-kingdom/cloud-kingdom-journey-to-royal-castle.png",
+      "setting": "cloud_kingdom",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "sky path",
+        "royal castle",
+        "floating clouds"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "cloud-kingdom-royal-garden-celebration-png",
+      "file": "cloud-kingdom/cloud-kingdom-royal-garden-celebration.png.png",
+      "setting": "cloud_kingdom",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "royal garden",
+        "colorful flowers",
+        "celebration lights"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "cloud-kingdom-royal-sky-bridge-png",
+      "file": "cloud-kingdom/cloud-kingdom-royal-sky-bridge.png.png",
+      "setting": "cloud_kingdom",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "sky bridge",
+        "floating islands",
+        "clouds"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "cloud-arrival",
+      "file": "cloud-kingdom/cloud_arrival.png",
+      "setting": "cloud_kingdom",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "cloud pathway",
+        "floating islands",
+        "bright sky"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "cloud-temple",
+      "file": "cloud-kingdom/cloud_temple.png",
+      "setting": "cloud_kingdom",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "cloud temple",
+        "floating clouds",
+        "temple entrance"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ice-cream-valley-candy-bridge-challenge-png",
+      "file": "icecream-valley/ice-cream-valley-candy-bridge-challenge.png.png",
+      "setting": "icecream_valley",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "candy bridge",
+        "colorful sweets",
+        "valley"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ice-cream-valley-chocolate-river-crossing-png",
+      "file": "icecream-valley/ice-cream-valley-chocolate-river-crossing.png.png",
+      "setting": "icecream_valley",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "chocolate river",
+        "riverbank",
+        "sweet landscape"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ice-cream-valley-crystal-sugar-cave-png",
+      "file": "icecream-valley/ice-cream-valley-crystal-sugar-cave.png.png",
+      "setting": "icecream_valley",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "sugar crystal cave",
+        "sparkling crystals",
+        "cave walls"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ice-cream-valley-strawberry-cream-falls-png",
+      "file": "icecream-valley/ice-cream-valley-strawberry-cream-falls.png.png",
+      "setting": "icecream_valley",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "strawberry cream waterfall",
+        "pink rocks",
+        "sweet valley"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ice-cream-valley-sundae-mountain-summit-png",
+      "file": "icecream-valley/ice-cream-valley-sundae-mountain-summit.png.png",
+      "setting": "icecream_valley",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "sundae mountain",
+        "ice cream scoops",
+        "summit"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ice-cream-valley-sweet-festival-celebration-png",
+      "file": "icecream-valley/ice-cream-valley-sweet-festival-celebration.png.png",
+      "setting": "icecream_valley",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "sweet festival",
+        "colorful sweets",
+        "celebration decorations"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ice-cream-valley-sweet-valley-arrival-png",
+      "file": "icecream-valley/ice-cream-valley-sweet-valley-arrival.png.png",
+      "setting": "icecream_valley",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "sweet valley",
+        "ice cream hills",
+        "open path"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "ice-cream-valley-waffle-cone-village-png",
+      "file": "icecream-valley/ice-cream-valley-waffle-cone-village.png.png",
+      "setting": "icecream_valley",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "waffle cone houses",
+        "sweet village",
+        "colorful path"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fairy-village-crystal-brook-cave",
+      "file": "fairy_village/fairy-village-crystal-brook-cave.jpeg",
+      "setting": "fairy_village",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "crystal brook",
+        "cave entrance",
+        "glowing crystals"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fairy-village-enchanted-arrival",
+      "file": "fairy_village/fairy-village-enchanted-arrival.jpeg",
+      "setting": "fairy_village",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "fairy village entrance",
+        "woodland path",
+        "mushroom houses"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fairy-village-great-mushroom-treehouse",
+      "file": "fairy_village/fairy-village-great-mushroom-treehouse.jpeg",
+      "setting": "fairy_village",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "giant mushroom treehouse",
+        "mushroom platforms",
+        "forest plants"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fairy-village-hidden-fairy-door",
+      "file": "fairy_village/fairy-village-hidden-fairy-door.jpeg",
+      "setting": "fairy_village",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "hidden fairy door",
+        "tree roots",
+        "mossy ground"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fairy-village-lantern-flower-garden",
+      "file": "fairy_village/fairy-village-lantern-flower-garden.jpeg",
+      "setting": "fairy_village",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "flower garden",
+        "glowing lanterns",
+        "colorful flowers"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fairy-village-moonflower-clearing",
+      "file": "fairy_village/fairy-village-moonflower-clearing.jpeg",
+      "setting": "fairy_village",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "moonflowers",
+        "woodland clearing",
+        "soft glowing lights"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fairy-village-mushroom-cottage-lane",
+      "file": "fairy_village/fairy-village-mushroom-cottage-lane.jpeg",
+      "setting": "fairy_village",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "mushroom cottages",
+        "village lane",
+        "woodland plants"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fairy-village-rootwood-bridge",
+      "file": "fairy_village/fairy-village-rootwood-bridge.jpeg",
+      "setting": "fairy_village",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "rootwood bridge",
+        "tree roots",
+        "forest stream"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fantasy-park-candy-carnival-street",
+      "file": "amusement_park/fantasy-park-candy-carnival-street.jpeg",
+      "setting": "amusement_park",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "carnival street",
+        "colorful stalls",
+        "festive decorations"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fantasy-park-dragon-roller-coaster",
+      "file": "amusement_park/fantasy-park-dragon-roller-coaster.jpeg",
+      "setting": "amusement_park",
+      "view": "path",
+      "mood": "exploration",
+      "landmarks": [
+        "dragon roller coaster",
+        "curving tracks",
+        "amusement park"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fantasy-park-enchanted-carousel",
+      "file": "amusement_park/fantasy-park-enchanted-carousel.jpeg",
+      "setting": "amusement_park",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "enchanted carousel",
+        "decorative horses",
+        "colorful lights"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fantasy-park-grand-fireworks-finale",
+      "file": "amusement_park/fantasy-park-grand-fireworks-finale.jpeg",
+      "setting": "amusement_park",
+      "view": "celebrate",
+      "mood": "joyful",
+      "landmarks": [
+        "fireworks",
+        "night sky",
+        "festive park"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fantasy-park-magical-entrance",
+      "file": "amusement_park/fantasy-park-magical-entrance.jpeg",
+      "setting": "amusement_park",
+      "view": "arrive",
+      "mood": "curious",
+      "landmarks": [
+        "park entrance",
+        "colorful decorations",
+        "welcoming pathway"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fantasy-park-mystery-funhouse",
+      "file": "amusement_park/fantasy-park-mystery-funhouse.jpeg",
+      "setting": "amusement_park",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "funhouse entrance",
+        "playful structures",
+        "colorful park"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fantasy-park-rainbow-ferris-wheel",
+      "file": "amusement_park/fantasy-park-rainbow-ferris-wheel.jpeg",
+      "setting": "amusement_park",
+      "view": "goal",
+      "mood": "hopeful",
+      "landmarks": [
+        "rainbow Ferris wheel",
+        "colorful cabins",
+        "park attractions"
+      ],
+      "floorY": 0.78
+    },
+    {
+      "id": "fantasy-park-sky-adventure-ride",
+      "file": "amusement_park/fantasy-park-sky-adventure-ride.jpeg",
+      "setting": "amusement_park",
+      "view": "challenge",
+      "mood": "tense",
+      "landmarks": [
+        "adventure ride",
+        "elevated tracks",
+        "amusement park"
+      ],
+      "floorY": 0.78
+    }
+  ]
+}

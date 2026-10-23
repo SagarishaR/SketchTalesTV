@@ -1,9 +1,10 @@
 schema-version = 1
 
 [package]
-title = "Basic UI React Native Application for project sketchtalestv"
+title = "SketchTales"
 version = "0.1.0"
 id = "com.sketchtales.tv"
+icon = "@image/sketchtales.png"
 
 [os.version]
 min = "1.2"

@@ -12,7 +12,7 @@
         "open path",
         "flowers"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "garden-arrive-2",
@@ -25,7 +25,7 @@
         "river",
         "hills"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "garden-path",
@@ -38,7 +38,7 @@
         "tree",
         "rocks"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "garden-path-2",
@@ -51,7 +51,7 @@
         "stream",
         "winding path"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "garden-challenge",
@@ -64,7 +64,7 @@
         "stream",
         "riverbank"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "garden-challenge-2",
@@ -77,7 +77,7 @@
         "gorge",
         "crossing"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "garden-goal",
@@ -90,7 +90,7 @@
         "large tree",
         "steps"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "garden-celebrate",
@@ -103,7 +103,7 @@
         "waterfall",
         "gazebo"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ocean-arrival",
@@ -116,7 +116,7 @@
         "sandy seabed",
         "sunbeams"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ocean-reef-path",
@@ -129,7 +129,7 @@
         "shipwreck",
         "reef"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ocean-kelp-forest",
@@ -142,7 +142,7 @@
         "seaweed",
         "sandy trail"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ocean-coral-bridge",
@@ -155,7 +155,7 @@
         "coral rocks",
         "distant arches"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ocean-crystal-cave",
@@ -168,7 +168,7 @@
         "glowing crystals",
         "rock arch"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ocean-underwater-kingdom",
@@ -181,7 +181,7 @@
         "underwater arches",
         "distant kingdom"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ocean-treasure-discovery",
@@ -194,7 +194,7 @@
         "coins",
         "stone pillar"
       ],
-      "floorY": 0.78,
+      "floorY": 0.86,
       "onlyFor": [
         "rainbow_map",
         "golden_key"
@@ -211,7 +211,7 @@
         "shipwreck",
         "colorful coral"
       ],
-      "floorY": 0.78,
+      "floorY": 0.86,
       "onlyFor": [
         "rainbow_map",
         "golden_key"
@@ -228,7 +228,7 @@
         "turquoise lake",
         "volcano"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "dinosaur-fossil-discovery",
@@ -241,7 +241,7 @@
         "rocky ground",
         "ancient bones"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "dinosaur-hidden-waterfall",
@@ -254,7 +254,7 @@
         "rocky pool",
         "lush prehistoric plants"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "dinosaur-intro",
@@ -267,7 +267,7 @@
         "distant mountains",
         "open ground"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "dinosaur-jungle-trail",
@@ -280,7 +280,7 @@
         "tropical plants",
         "large trees"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "dinosaur-ravine-crossing",
@@ -293,7 +293,7 @@
         "rocky crossing",
         "steep cliffs"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "dinosaur-sunset-valley",
@@ -306,7 +306,7 @@
         "wide valley",
         "distant mountains"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "dinosaur-volcanic-pass",
@@ -319,7 +319,7 @@
         "mountain pass",
         "lava-lit landscape"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "forest-ancient-tree-bridge",
@@ -332,7 +332,7 @@
         "wooden bridge",
         "forest stream"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "forest-crystal-cave",
@@ -345,7 +345,7 @@
         "glowing crystals",
         "rocky walls"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "forest-enchanted-waterfall",
@@ -358,7 +358,7 @@
         "mossy rocks",
         "enchanted forest"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "forest-entrance",
@@ -371,7 +371,7 @@
         "woodland path",
         "tall trees"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "forest-glowing-grove",
@@ -384,7 +384,7 @@
         "woodland clearing",
         "enchanted trees"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "forest-peaceful-celebration",
@@ -397,7 +397,7 @@
         "glowing lights",
         "forest plants"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "forest-thorny-crossing",
@@ -410,7 +410,7 @@
         "narrow crossing",
         "forest path"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "forest-whispering-trail",
@@ -423,7 +423,7 @@
         "tall trees",
         "woodland plants"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "aurora-mountain-pass",
@@ -436,7 +436,7 @@
         "snowy mountains",
         "icy path"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "crystal-ice-cave",
@@ -449,7 +449,7 @@
         "ice crystals",
         "frozen walls"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "frosty-forest-trail",
@@ -462,7 +462,7 @@
         "frosty trees",
         "winter forest"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "frozen-crossing",
@@ -475,7 +475,7 @@
         "icy ground",
         "snowy banks"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "frozen-waterfall",
@@ -488,7 +488,7 @@
         "ice formations",
         "snowy rocks"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ice-palace",
@@ -501,7 +501,7 @@
         "ice towers",
         "snow-covered courtyard"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "snowy-arrival",
@@ -514,7 +514,7 @@
         "winter path",
         "snow-covered trees"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "winter-celebration",
@@ -527,7 +527,7 @@
         "snowy decorations",
         "glowing lights"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "space-alien-crystal-caves",
@@ -540,7 +540,7 @@
         "glowing crystals",
         "rocky formations"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "space-arrival",
@@ -553,7 +553,7 @@
         "rocky landscape",
         "crystals"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "space-asteroid-field",
@@ -566,7 +566,7 @@
         "space rocks",
         "distant stars"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "space-cosmic-celebration",
@@ -579,7 +579,7 @@
         "cosmic lights",
         "space landscape"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "space-cosmic-path",
@@ -592,7 +592,7 @@
         "distant planets",
         "stars"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "space-meteor-challenge",
@@ -605,7 +605,7 @@
         "space rocks",
         "glowing sky"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "space-planetary-discovery",
@@ -618,7 +618,7 @@
         "planetary landscape",
         "starry sky"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "space-station",
@@ -631,7 +631,7 @@
         "futuristic structures",
         "outer space"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "toy-celebration-playground",
@@ -644,7 +644,7 @@
         "colorful play structures",
         "play area"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "toy-marble-maze",
@@ -657,7 +657,7 @@
         "curving tracks",
         "toy structures"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "toy-puzzle-garden",
@@ -670,7 +670,7 @@
         "toy garden",
         "colorful paths"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "toy-rainbow-castle",
@@ -683,7 +683,7 @@
         "colorful towers",
         "castle entrance"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "toy-wind-up-road",
@@ -696,7 +696,7 @@
         "toy landscape",
         "colorful scenery"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "toy-wobbly-bridge",
@@ -709,7 +709,7 @@
         "toy blocks",
         "crossing"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "toy-workshop",
@@ -722,7 +722,7 @@
         "building blocks",
         "playful tools"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "toykingdom-arrival",
@@ -735,7 +735,7 @@
         "colorful buildings",
         "open path"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "cloud-kingdom-crystal-shrine-png",
@@ -748,7 +748,7 @@
         "hanging banners",
         "flowers"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "cloud-kingdom-floating-gardens-png",
@@ -761,7 +761,7 @@
         "clouds",
         "colorful plants"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "cloud-kingdom-floating-royal-gardens-png",
@@ -774,7 +774,7 @@
         "floating islands",
         "clouds"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "cloud-kingdom-journey-to-royal-castle",
@@ -787,7 +787,7 @@
         "royal castle",
         "floating clouds"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "cloud-kingdom-royal-garden-celebration-png",
@@ -800,7 +800,7 @@
         "colorful flowers",
         "celebration lights"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "cloud-kingdom-royal-sky-bridge-png",
@@ -813,7 +813,7 @@
         "floating islands",
         "clouds"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "cloud-arrival",
@@ -826,7 +826,7 @@
         "floating islands",
         "bright sky"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "cloud-temple",
@@ -839,7 +839,7 @@
         "floating clouds",
         "temple entrance"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ice-cream-valley-candy-bridge-challenge-png",
@@ -852,7 +852,7 @@
         "colorful sweets",
         "valley"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ice-cream-valley-chocolate-river-crossing-png",
@@ -865,7 +865,7 @@
         "riverbank",
         "sweet landscape"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ice-cream-valley-crystal-sugar-cave-png",
@@ -878,7 +878,7 @@
         "sparkling crystals",
         "cave walls"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ice-cream-valley-strawberry-cream-falls-png",
@@ -891,7 +891,7 @@
         "pink rocks",
         "sweet valley"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ice-cream-valley-sundae-mountain-summit-png",
@@ -904,7 +904,7 @@
         "ice cream scoops",
         "summit"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ice-cream-valley-sweet-festival-celebration-png",
@@ -917,7 +917,7 @@
         "colorful sweets",
         "celebration decorations"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ice-cream-valley-sweet-valley-arrival-png",
@@ -930,7 +930,7 @@
         "ice cream hills",
         "open path"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "ice-cream-valley-waffle-cone-village-png",
@@ -943,7 +943,7 @@
         "sweet village",
         "colorful path"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fairy-village-crystal-brook-cave",
@@ -956,7 +956,7 @@
         "cave entrance",
         "glowing crystals"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fairy-village-enchanted-arrival",
@@ -969,7 +969,7 @@
         "woodland path",
         "mushroom houses"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fairy-village-great-mushroom-treehouse",
@@ -982,7 +982,7 @@
         "mushroom platforms",
         "forest plants"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fairy-village-hidden-fairy-door",
@@ -995,7 +995,7 @@
         "tree roots",
         "mossy ground"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fairy-village-lantern-flower-garden",
@@ -1008,7 +1008,7 @@
         "glowing lanterns",
         "colorful flowers"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fairy-village-moonflower-clearing",
@@ -1021,7 +1021,7 @@
         "woodland clearing",
         "soft glowing lights"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fairy-village-mushroom-cottage-lane",
@@ -1034,7 +1034,7 @@
         "village lane",
         "woodland plants"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fairy-village-rootwood-bridge",
@@ -1047,7 +1047,7 @@
         "tree roots",
         "forest stream"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fantasy-park-candy-carnival-street",
@@ -1060,7 +1060,7 @@
         "colorful stalls",
         "festive decorations"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fantasy-park-dragon-roller-coaster",
@@ -1073,7 +1073,7 @@
         "curving tracks",
         "amusement park"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fantasy-park-enchanted-carousel",
@@ -1086,7 +1086,7 @@
         "decorative horses",
         "colorful lights"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fantasy-park-grand-fireworks-finale",
@@ -1099,7 +1099,7 @@
         "night sky",
         "festive park"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fantasy-park-magical-entrance",
@@ -1112,7 +1112,7 @@
         "colorful decorations",
         "welcoming pathway"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fantasy-park-mystery-funhouse",
@@ -1125,7 +1125,7 @@
         "playful structures",
         "colorful park"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fantasy-park-rainbow-ferris-wheel",
@@ -1138,7 +1138,7 @@
         "colorful cabins",
         "park attractions"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     },
     {
       "id": "fantasy-park-sky-adventure-ride",
@@ -1151,7 +1151,7 @@
         "elevated tracks",
         "amusement park"
       ],
-      "floorY": 0.78
+      "floorY": 0.86
     }
   ]
 }
