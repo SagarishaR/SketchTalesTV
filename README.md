@@ -23,7 +23,7 @@ Track: <strong>Fire TV (Vega OS, React Native)</strong> · Mini Challenge: <stro
 
 | | |
 |---|---|
-| 🎥 **Demo video** | _Add your video link here_ |
+| 🎥 **Demo video** | https://youtu.be/wtX6e4aDLdI |
 | 📓 **Development journey** | [Friction Log](FRICTION_LOG.md) |
 
 ---
