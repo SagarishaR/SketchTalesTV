@@ -126,14 +126,14 @@
       "mood": "exploration",
       "landmarks": [
         "coral path",
-        "reef",
-        "sea plants"
+        "shipwreck",
+        "reef"
       ],
       "floorY": 0.78
     },
     {
       "id": "ocean-kelp-forest",
-      "file": "ocean/ocean-kelp-forest.png",
+      "file": "ocean/ocean-crystal-cave.png",
       "setting": "ocean",
       "view": "path",
       "mood": "curious",
@@ -151,15 +151,15 @@
       "view": "challenge",
       "mood": "exploration",
       "landmarks": [
-        "coral bridge",
-        "rock arch",
-        "reef"
+        "reef terraces",
+        "coral rocks",
+        "distant arches"
       ],
       "floorY": 0.78
     },
     {
       "id": "ocean-crystal-cave",
-      "file": "ocean/ocean-crystal-cave.png",
+      "file": "ocean/ocean-kelp-forest.png",
       "setting": "ocean",
       "view": "challenge",
       "mood": "tense",
@@ -192,9 +192,13 @@
       "landmarks": [
         "treasure chest",
         "coins",
-        "underwater cave"
+        "stone pillar"
       ],
-      "floorY": 0.78
+      "floorY": 0.78,
+      "onlyFor": [
+        "rainbow_map",
+        "golden_key"
+      ]
     },
     {
       "id": "ocean-peaceful-reef",
@@ -203,11 +207,15 @@
       "view": "celebrate",
       "mood": "joyful",
       "landmarks": [
-        "sunlit reef",
-        "colorful coral",
-        "open seabed"
+        "treasure chest",
+        "shipwreck",
+        "colorful coral"
       ],
-      "floorY": 0.78
+      "floorY": 0.78,
+      "onlyFor": [
+        "rainbow_map",
+        "golden_key"
+      ]
     },
     {
       "id": "dinosaur-crystal-cavern",
@@ -216,9 +224,9 @@
       "view": "arrive",
       "mood": "curious",
       "landmarks": [
-        "crystal cave",
-        "rock formations",
-        "glowing crystals"
+        "waterfall",
+        "turquoise lake",
+        "volcano"
       ],
       "floorY": 0.78
     },
@@ -252,8 +260,8 @@
       "id": "dinosaur-intro",
       "file": "dinosaur-valley/dinosaur-intro.png",
       "setting": "dinosaur_valley",
-      "view": "challenge",
-      "mood": "tense",
+      "view": "arrive",
+      "mood": "curious",
       "landmarks": [
         "prehistoric valley",
         "distant mountains",
@@ -317,8 +325,8 @@
       "id": "forest-ancient-tree-bridge",
       "file": "enchanted-forest/forest-ancient-tree-bridge.jpeg",
       "setting": "enchanted_forest",
-      "view": "arrive",
-      "mood": "curious",
+      "view": "challenge",
+      "mood": "tense",
       "landmarks": [
         "ancient tree",
         "wooden bridge",
@@ -343,8 +351,8 @@
       "id": "forest-enchanted-waterfall",
       "file": "enchanted-forest/forest-enchanted-waterfall.jpeg",
       "setting": "enchanted_forest",
-      "view": "challenge",
-      "mood": "tense",
+      "view": "goal",
+      "mood": "hopeful",
       "landmarks": [
         "waterfall",
         "mossy rocks",
@@ -356,8 +364,8 @@
       "id": "forest-entrance",
       "file": "enchanted-forest/forest-entrance.jpeg",
       "setting": "enchanted_forest",
-      "view": "challenge",
-      "mood": "tense",
+      "view": "arrive",
+      "mood": "curious",
       "landmarks": [
         "forest entrance",
         "woodland path",
@@ -382,8 +390,8 @@
       "id": "forest-peaceful-celebration",
       "file": "enchanted-forest/forest-peaceful-celebration.jpeg",
       "setting": "enchanted_forest",
-      "view": "challenge",
-      "mood": "hopeful",
+      "view": "celebrate",
+      "mood": "joyful",
       "landmarks": [
         "peaceful clearing",
         "glowing lights",
@@ -395,8 +403,8 @@
       "id": "forest-thorny-crossing",
       "file": "enchanted-forest/forest-thorny-crossing.jpeg",
       "setting": "enchanted_forest",
-      "view": "goal",
-      "mood": "hopeful",
+      "view": "challenge",
+      "mood": "tense",
       "landmarks": [
         "thorny plants",
         "narrow crossing",
@@ -408,8 +416,8 @@
       "id": "forest-whispering-trail",
       "file": "enchanted-forest/forest-whispering-trail.jpeg",
       "setting": "enchanted_forest",
-      "view": "celebrate",
-      "mood": "joyful",
+      "view": "arrive",
+      "mood": "curious",
       "landmarks": [
         "winding forest trail",
         "tall trees",
@@ -447,8 +455,8 @@
       "id": "frosty-forest-trail",
       "file": "snow-world/frosty-forest-trail.jpeg",
       "setting": "winter_village",
-      "view": "challenge",
-      "mood": "tense",
+      "view": "path",
+      "mood": "exploration",
       "landmarks": [
         "snow-covered trail",
         "frosty trees",
@@ -473,8 +481,8 @@
       "id": "frozen-waterfall",
       "file": "snow-world/frozen-waterfall.jpeg",
       "setting": "winter_village",
-      "view": "path",
-      "mood": "exploration",
+      "view": "challenge",
+      "mood": "tense",
       "landmarks": [
         "frozen waterfall",
         "ice formations",
@@ -486,7 +494,7 @@
       "id": "ice-palace",
       "file": "snow-world/ice-palace.jpeg",
       "setting": "winter_village",
-      "view": "challenge",
+      "view": "goal",
       "mood": "hopeful",
       "landmarks": [
         "ice palace",
@@ -499,8 +507,8 @@
       "id": "snowy-arrival",
       "file": "snow-world/snowy-arrival.jpeg",
       "setting": "winter_village",
-      "view": "goal",
-      "mood": "hopeful",
+      "view": "arrive",
+      "mood": "curious",
       "landmarks": [
         "snowy landscape",
         "winter path",
@@ -525,8 +533,8 @@
       "id": "space-alien-crystal-caves",
       "file": "space/space-alien-crystal-caves.png",
       "setting": "space_station",
-      "view": "arrive",
-      "mood": "curious",
+      "view": "path",
+      "mood": "exploration",
       "landmarks": [
         "alien crystal cave",
         "glowing crystals",
@@ -538,12 +546,12 @@
       "id": "space-arrival",
       "file": "space/space-arrival.png",
       "setting": "space_station",
-      "view": "path",
-      "mood": "exploration",
+      "view": "arrive",
+      "mood": "curious",
       "landmarks": [
-        "crystal formations",
-        "mysterious cavern",
-        "glowing surfaces"
+        "big planets",
+        "rocky landscape",
+        "crystals"
       ],
       "floorY": 0.78
     },
@@ -564,8 +572,8 @@
       "id": "space-cosmic-celebration",
       "file": "space/space-cosmic-celebration.png",
       "setting": "space_station",
-      "view": "challenge",
-      "mood": "tense",
+      "view": "celebrate",
+      "mood": "joyful",
       "landmarks": [
         "colorful stars",
         "cosmic lights",
@@ -616,8 +624,8 @@
       "id": "space-station",
       "file": "space/space-station.png",
       "setting": "space_station",
-      "view": "celebrate",
-      "mood": "joyful",
+      "view": "goal",
+      "mood": "hopeful",
       "landmarks": [
         "space station",
         "futuristic structures",
@@ -629,8 +637,8 @@
       "id": "toy-celebration-playground",
       "file": "toy-kingdom/toy-celebration-playground.png",
       "setting": "toy_city",
-      "view": "arrive",
-      "mood": "curious",
+      "view": "celebrate",
+      "mood": "joyful",
       "landmarks": [
         "toy playground",
         "colorful play structures",
@@ -668,8 +676,8 @@
       "id": "toy-rainbow-castle",
       "file": "toy-kingdom/toy-rainbow-castle.png",
       "setting": "toy_city",
-      "view": "challenge",
-      "mood": "tense",
+      "view": "goal",
+      "mood": "hopeful",
       "landmarks": [
         "rainbow castle",
         "colorful towers",
@@ -720,8 +728,8 @@
       "id": "toykingdom-arrival",
       "file": "toy-kingdom/toykingdom-arrival.png",
       "setting": "toy_city",
-      "view": "celebrate",
-      "mood": "joyful",
+      "view": "arrive",
+      "mood": "curious",
       "landmarks": [
         "toy kingdom entrance",
         "colorful buildings",
@@ -733,12 +741,12 @@
       "id": "cloud-kingdom-crystal-shrine-png",
       "file": "cloud-kingdom/cloud-kingdom-crystal-shrine.png.png",
       "setting": "cloud_kingdom",
-      "view": "challenge",
-      "mood": "tense",
+      "view": "goal",
+      "mood": "hopeful",
       "landmarks": [
-        "crystal shrine",
-        "floating clouds",
-        "glowing crystals"
+        "palace stairway",
+        "hanging banners",
+        "flowers"
       ],
       "floorY": 0.78
     },
@@ -746,8 +754,8 @@
       "id": "cloud-kingdom-floating-gardens-png",
       "file": "cloud-kingdom/cloud-kingdom-floating-gardens.png.png",
       "setting": "cloud_kingdom",
-      "view": "goal",
-      "mood": "hopeful",
+      "view": "path",
+      "mood": "exploration",
       "landmarks": [
         "floating gardens",
         "clouds",
@@ -772,8 +780,8 @@
       "id": "cloud-kingdom-journey-to-royal-castle",
       "file": "cloud-kingdom/cloud-kingdom-journey-to-royal-castle.png",
       "setting": "cloud_kingdom",
-      "view": "goal",
-      "mood": "hopeful",
+      "view": "path",
+      "mood": "exploration",
       "landmarks": [
         "sky path",
         "royal castle",
@@ -928,8 +936,8 @@
       "id": "ice-cream-valley-waffle-cone-village-png",
       "file": "icecream-valley/ice-cream-valley-waffle-cone-village.png.png",
       "setting": "icecream_valley",
-      "view": "goal",
-      "mood": "hopeful",
+      "view": "path",
+      "mood": "exploration",
       "landmarks": [
         "waffle cone houses",
         "sweet village",
@@ -993,8 +1001,8 @@
       "id": "fairy-village-lantern-flower-garden",
       "file": "fairy_village/fairy-village-lantern-flower-garden.jpeg",
       "setting": "fairy_village",
-      "view": "goal",
-      "mood": "hopeful",
+      "view": "path",
+      "mood": "exploration",
       "landmarks": [
         "flower garden",
         "glowing lanterns",
@@ -1006,8 +1014,8 @@
       "id": "fairy-village-moonflower-clearing",
       "file": "fairy_village/fairy-village-moonflower-clearing.jpeg",
       "setting": "fairy_village",
-      "view": "goal",
-      "mood": "hopeful",
+      "view": "celebrate",
+      "mood": "joyful",
       "landmarks": [
         "moonflowers",
         "woodland clearing",
@@ -1019,8 +1027,8 @@
       "id": "fairy-village-mushroom-cottage-lane",
       "file": "fairy_village/fairy-village-mushroom-cottage-lane.jpeg",
       "setting": "fairy_village",
-      "view": "goal",
-      "mood": "hopeful",
+      "view": "path",
+      "mood": "exploration",
       "landmarks": [
         "mushroom cottages",
         "village lane",
@@ -1071,8 +1079,8 @@
       "id": "fantasy-park-enchanted-carousel",
       "file": "amusement_park/fantasy-park-enchanted-carousel.jpeg",
       "setting": "amusement_park",
-      "view": "path",
-      "mood": "exploration",
+      "view": "goal",
+      "mood": "hopeful",
       "landmarks": [
         "enchanted carousel",
         "decorative horses",
@@ -1123,8 +1131,8 @@
       "id": "fantasy-park-rainbow-ferris-wheel",
       "file": "amusement_park/fantasy-park-rainbow-ferris-wheel.jpeg",
       "setting": "amusement_park",
-      "view": "path",
-      "mood": "exploration",
+      "view": "goal",
+      "mood": "hopeful",
       "landmarks": [
         "rainbow Ferris wheel",
         "colorful cabins",

@@ -10,3 +10,13 @@ build
 node_modules
 CMakeUserPresets.json
 npm-debug.log
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+.aws/
+credentials
+credentials.*
+*.pem
+*.key

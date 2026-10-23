@@ -1,4 +1,3 @@
-
 'use strict';
 
 const fs = require('fs');
@@ -212,7 +211,15 @@ function matchBackground(scene, options = {}) {
 
   const candidates = loadLibrary().filter((image) => {
     const imageSetting = image.setting || image.environment;
-    return imageSetting === setting;
+    if (imageSetting !== setting) return false;
+
+    // Pictures tagged onlyFor are used only in stories with one of those quests
+    // (e.g. a treasure chest picture only for treasure-style quests).
+    if (Array.isArray(image.onlyFor) && image.onlyFor.length > 0) {
+      return image.onlyFor.includes(scene.quest);
+    }
+
+    return true;
   });
 
   if (candidates.length === 0) {

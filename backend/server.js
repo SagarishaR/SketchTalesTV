@@ -1,7 +1,8 @@
-
 const {narrate} = require('./narrate');
-const {generateRecipeStory} = require('./recipeStory');
+const {generateRecipeStory, PARTS} = require('./recipeStory');
 const {matchStoryBackgrounds} = require('./backgroundMatcher');
+const {writeScenesWithBedrock} = require('./bedrockStory');
+const {saveStoryRecord} = require('./awsStore');
 const express = require('express');
 const cors = require('cors');
 const QRCode = require('qrcode');
@@ -488,25 +489,23 @@ app.post('/api/pairing/:code/story', async (req, res) => {
 
     const generated = matchStoryBackgrounds(storyForMatching);
 
-    // Make narration acknowledge landmarks in the actual selected background.
-    const scenesWithGroundedNarration = generated.scenes.map(scene => {
-      const landmarks = Array.isArray(scene.backgroundLandmarks)
-        ? scene.backgroundLandmarks.filter(
-            item => typeof item === 'string' && item.trim()
-          )
-        : [];
-
-      if (!landmarks.length) return scene;
-
-      const visibleLandmarks = landmarks.slice(0, 3).join(', ');
-      const narration = scene.narration || '';
-      const sentence = `Around ${scene.title === 'A Happy Ending' ? 'the place' : 'the scene'}, ${visibleLandmarks} could be seen.`;
-
-      return {
-        ...scene,
-        narration: `${narration} ${sentence}`.replace(/\\s+/g, ' ').trim(),
-      };
+    // Bedrock rewrites each scene's narration to fit the picture that scene
+    // will show. Falls back to the local narration on any problem.
+    const bedrock = await writeScenesWithBedrock({
+      scenes: generated.scenes,
+      hero: characterName,
+      place:
+        (PARTS.settings.find(item => item.id === generatedBase.recipe.setting) || {}).place ||
+        'a storybook world',
+      setting: settingMap[generatedBase.recipe.setting] || '',
     });
+
+    console.log(
+      `[narration] source=${bedrock.source} ms=${bedrock.ms}` +
+      (bedrock.reason ? ` reason="${bedrock.reason}"` : ''),
+    );
+
+    const scenesWithGroundedNarration = bedrock.scenes;
 
     console.log(
       '[backgrounds]',
@@ -546,11 +545,19 @@ app.post('/api/pairing/:code/story', async (req, res) => {
       heroImageAvailable: Boolean(session.processedDrawing),
       scenes,
       generatedAt: Date.now(),
-      mode: 'local',
+      mode: bedrock.source === 'bedrock' ? 'bedrock' : 'local',
+      narrationSource: bedrock.source,
     };
 
     session.genre = genre;
     session.story = story;
+
+    // Fire-and-forget: never delays or breaks the response.
+    saveStoryRecord(story, {
+      narrationSource: bedrock.source,
+      model: bedrock.model,
+      bedrockMs: bedrock.ms,
+    });
 
     res.status(201).json(story);
   } catch (error) {
